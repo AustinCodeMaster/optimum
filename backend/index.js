@@ -1,0 +1,10 @@
+const express = require("express"); //Import the express package
+const app = express();  // create the application
+//app.get() when a get request is made to this path,run this function
+app.get("/", (req,res) => {
+    res.send("Optimum Diagnostocs API is running");
+});
+
+app.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
+});
