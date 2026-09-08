@@ -1,6 +1,7 @@
 const authRoutes = require("./routes/auth");
 const express = require("express"); //Import the express package
 const pool = require("./db");
+const authenticateToken = require("./middleware/authMiddleware");
 
 const app = express();  // create the application
 
@@ -22,6 +23,14 @@ app.get("/db-test", async (req,res) =>{
     }
 });
 
+//Temporary route to test JWT authentication
+app.get("/api/protected", authenticateToken, (req,res) =>{
+    res.json({
+        message: "You have access to this protected route",
+        user: req.user
+    });
+});
+// app.listen() starts the server on a port
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
