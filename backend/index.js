@@ -4,12 +4,14 @@ const pool = require("./db");
 const authenticateToken = require("./middleware/authMiddleware");
 const authorizeRole = require("./middleware/roleMiddleware.js");
 const receivedRoutes = require("./routes/received.js");
+const expenseRoutes = require("./routes/expense");
 
 const app = express();  // create the application
 
 
 app.use(express.json());// enables express to read JSON
 
+app.use("/api/expense", expenseRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/received", receivedRoutes);
 
