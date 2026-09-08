@@ -2,6 +2,7 @@ const authRoutes = require("./routes/auth");
 const express = require("express"); //Import the express package
 const pool = require("./db");
 const authenticateToken = require("./middleware/authMiddleware");
+const authorizeRole = require("./middleware/roleMiddleware.js");
 
 const app = express();  // create the application
 
@@ -30,6 +31,20 @@ app.get("/api/protected", authenticateToken, (req,res) =>{
         user: req.user
     });
 });
+
+//Temporary route to test admin-only access
+app.get(
+    "/api/admin-test",
+    authenticateToken,
+    authorizeRole("admin"),
+    (req,res) => {
+        res.json({
+            message: "Welcome Admin",
+            user: req.user
+        });
+    }
+);
+
 // app.listen() starts the server on a port
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
