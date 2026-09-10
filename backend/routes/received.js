@@ -120,6 +120,8 @@ router.patch(
 
    //this is the function that express runs whenever someone makes a request to that route
    async (req, res) => {
+
+    //converst the receivedId into a  number from the URL
     const receivedId = Number(req.params.id);
     
     //check that the received payment ID is a valid positive integer
