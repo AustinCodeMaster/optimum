@@ -2,10 +2,11 @@ const authRoutes = require("./routes/auth");
 const express = require("express"); //Import the express package
 const pool = require("./db");
 const authenticateToken = require("./middleware/authMiddleware");
-const authorizeRole = require("./middleware/roleMiddleware.js");
-const receivedRoutes = require("./routes/received.js");
+const authorizeRole = require("./middleware/roleMiddleware");
+const receivedRoutes = require("./routes/received");
 const expenseRoutes = require("./routes/expense");
 const transactionRoutes = require("./routes/transactions");
+const summaryRoutes = require("./routes/summary");
 
 const app = express();  // create the application
 
@@ -16,6 +17,7 @@ app.use("/api/expense", expenseRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/received", receivedRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/summary", summaryRoutes );
 
 //app.get() when a get request is made to this path,run this function
 app.get("/", (req,res) => {
