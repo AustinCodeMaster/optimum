@@ -112,4 +112,120 @@ router.post(   //creates the endpoint for recording a payment
     }
 );
 
-module.exports = router
+// PATCH /api/received/:id - allows admin to correct a received payment
+router.patch(
+   "/:id",  // this is the id placeholder
+   authenticateToken,
+   authorizeRole("admin"),
+
+   //this is the function that express runs whenever someone makes a request to that route
+   async (req, res) => {
+    const receivedId = Number(req.params.id);
+    
+    //check that the received payment ID is a valid positive integer
+    if (!Number.isInteger(receivedId) || receivedId <= 0) {
+        return res.status(400).json({
+            message: "Invalid received payment ID"
+        });
+    }
+    const {
+      patient_name,
+      doctor_name,
+      lab_number,
+      amount,
+      payment_method,
+      receipt_number,
+      mpesa_transaction_number,
+      date_received
+      }  = req.body;
+
+      //check that all required fields are provided
+      if (
+        !patient_name ||
+        !doctor_name ||
+        !lab_number ||
+        !amount ||
+        !payment_method ||
+        !date_received
+      ) {
+        return res.status(400).json({
+            message: "Please provide all the required fields"
+        });
+      }
+
+      //validate the  amount
+      if (!Number.isInteger(amount) || amount <=0) {
+        return res.status(400).json({
+            message : "Amount must be a positive integer"
+        });
+      }
+
+      //validate the payment method
+      if(payment_method !== "cash" && payment_method !== "mpesa") {
+        return res.status(400).json({
+            message: "Payment method must be cash or mpesa"
+        });
+      }
+
+      //enusure that cash require receipt number and mpesa require transaction_number
+      if(payment_method === "cash") {
+        if(!receipt_number || mpesa_transaction_number) {
+            return res.status(400).json({
+                 message: "Cash requires receipt number only"
+            });
+        }
+      }
+      if(payment_method === "mpesa") {
+        if(!mpesa_transaction_number || receipt_number) {
+            return res.status(400).json({
+                message: "Mpesa requires transaction number only"
+            });
+        }
+      }
+      try {
+        const result = await pool.query(
+           `UPDATE received
+            SET patient_name = ?,
+                doctor_name = ?,
+                lab_number = ?,
+                amount = ?,
+                payment_method = ?,
+                receipt_number = ?,
+                mpesa_transaction_number = ?,
+                date_received = ?
+            WHERE received_id = ?`,
+            [
+                patient_name,
+                doctor_name,
+                lab_number,
+                amount,
+                payment_method,
+                receipt_number || null,
+                mpesa_transaction_number || null,
+                date_received,
+                receivedId
+            ] 
+        );
+        
+        // If no record was updated, the received payment ID does not exist
+        //affectedRows tells us how many rows the UPDATE affected
+        if(result.affectedRows === 0) {
+            return res.status(404).json({
+                message: "Received payment not found"
+            });
+        }
+
+        //send success response
+        res.status(200).json({
+            message: "Payment updated successfully"
+        });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Server error"
+        });
+      }
+   }   
+);
+
+module.exports = router;
