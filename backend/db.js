@@ -1,4 +1,4 @@
-require("dotenv").config(); //imports the dotenv package
+//require("dotenv").config(); //imports the dotenv package
 const mariadb = require("mariadb");//imports the mariadb package we installed
 
 const pool = mariadb.createPool({ //creates a connection pool. A pool manages database connections so the backend can resuse them
