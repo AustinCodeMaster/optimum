@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import './Login.css'
 import { useNavigate } from 'react-router-dom'
+
 function Login() {
     const [username, setUsername] = useState('') //useState is what lets React remember the current username and password while the user is typing
     const [password, setPassword] = useState('')
-    
+    const [error, setError] = useState('')
+
     const navigate = useNavigate()
 
     
@@ -25,6 +27,7 @@ function Login() {
         const data = await response.json()
 
         if (response.ok) {
+            setError('')
             localStorage.setItem('token', data.token)
             localStorage.setItem('user', JSON.stringify(data.user))
             
@@ -33,6 +36,8 @@ function Login() {
             }else if (data.user.role === 'admin') {
                 navigate('/admin/dashboard')
             }
+        } else {
+            setError(data.message)
         }
     }
 
@@ -44,6 +49,11 @@ function Login() {
                 <p>Please log in to continue</p>
 
                 <form onSubmit={handleSubmit}>
+                     {error && (
+                     <div className="login-error">
+                         {error}
+                     </div>
+                    )}
                     <label>Username</label>
                     <input
                         type="text"
@@ -59,7 +69,7 @@ function Login() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-
+                    
                     <button type="submit">
                         Login
                     </button>
