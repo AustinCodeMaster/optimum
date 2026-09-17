@@ -1,0 +1,28 @@
+.recent-transactions {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.recent-transactions h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.recent-transactions table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recent-transactions th,
+.recent-transactions td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.recent-transactions th {
+    font-size: 14px;
+    color: #6b7280;
+}
