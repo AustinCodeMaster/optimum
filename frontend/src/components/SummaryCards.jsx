@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'  //lets react remember data while th
 import './SummaryCards.css'
 //useState= keeps the numbers
 //useEffect = goes to get the numbers
-function SummaryCards() {
+function SummaryCards({ refreshkey }) {
     const [summary, setSummary] = useState({
         total_received: 0,
         total_expenses: 0,
@@ -21,7 +21,7 @@ function SummaryCards() {
            .then(data => {                     // when it is done save the data using setSummary saves the totals
                 setSummary(data)
            })
-    }, [])
+    }, [refreshkey])
 
     return (
         <div className="summary-cards">

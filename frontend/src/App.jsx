@@ -6,6 +6,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import RecordReceived from './pages/RecordReceived.jsx'
 import RecordExpense from './pages/RecordExpense'
+import Transactions from './pages/Transactions.jsx'
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
           <ProtectedRoute allowedRole="staff">
             <RecordExpense />
           </ProtectedRoute>  
+         }
+         />
+         <Route
+         path="/staff/transactions"
+         element={
+          <ProtectedRoute allowedRole="staff">
+             <Transactions />
+          </ProtectedRoute>
          }
          />
        </Routes>

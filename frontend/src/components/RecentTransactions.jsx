@@ -3,6 +3,7 @@ import './RecentTransactions.css'
 function RecentTransactions() {
     const [transactions, setTransactions] = useState([]) //this means react should remember the transactions
 
+    
     useEffect( () => {
         const token = localStorage.getItem('token')
 
@@ -36,9 +37,33 @@ function RecentTransactions() {
                     
                    {transactions.map(transaction =>( //.map means go through every transaction in the transactin array and created oe table for for each one
                     <tr key={transaction.transaction_id}>
-                        <td>{transaction.transaction_date}</td>
+                        <td>
+                            {new Date(transaction.transaction_date).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            })}
+                        </td>
                         <td>{transaction.type}</td>
-                        <td>{transaction.details}</td>
+                        <td>
+                     {transaction.type === 'received' ? (
+                        <>
+                         {transaction.patient_name}
+                        <br />
+                       <small>Lab No: {transaction.lab_number}</small>
+                        </>
+                        ) : (
+                        <>
+                      {transaction.description}
+                       {transaction.destination && (
+                       <>
+                       <br />
+                    <small>{transaction.destination}</small>
+                </> 
+            )}
+        </>
+    )}
+</td>
                         <td>Ksh {transaction.amount}</td>
 
                     </tr>
