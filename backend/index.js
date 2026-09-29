@@ -13,6 +13,7 @@ const receivedRoutes = require("./routes/received");
 const expenseRoutes = require("./routes/expense");
 const transactionRoutes = require("./routes/transactions");
 const summaryRoutes = require("./routes/summary");
+const statementRoutes = require("./routes/statement");
 
 const app = express();  // create the application
 
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/received", receivedRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/summary", summaryRoutes );
+app.use("/api/statement", statementRoutes);
 
 //app.get() when a get request is made to this path,run this function
 //also used to confirm that the API is running
