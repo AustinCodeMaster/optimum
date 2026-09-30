@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import '../pages/Transactions.css'
-
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 function AdminTransactions({ onTransactionUpdated }) {
     const [transactions, setTransactions] = useState([])
     const [pagination, setPagination] = useState({
@@ -162,6 +163,113 @@ function AdminTransactions({ onTransactionUpdated }) {
             alert(data.message)
         }
     }
+    async function generateStatement() {
+        const token = localStorage.getItem('token')
+
+        const params = new URLSearchParams()
+
+        if (search) params.append('search', search)
+        if (type) params.append("type", type)
+        if(startDate) params.append('start_date', startDate)
+        if(endDate) params.append("end_date", endDate)
+
+        if (paymentCategory === 'cash' || paymentCategory === 'mpesa') {
+            params.append('payment_method', paymentCategory)
+        }
+
+        if (
+            paymentCategory === 'transport' ||
+            paymentCategory === 'supplies' ||
+            paymentCategory === 'other'
+        ) {
+            params.append('expenditure_type', paymentCategory)
+        }
+
+        const response = await fetch(
+            `http://localhost:3000/api/statement?${params.toString()}`,
+             {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+             }
+        )
+        const data = await response.json()
+
+        if (!response.ok) {
+            alert(data.message)
+            return
+        }
+        const doc = new jsPDF()
+
+        doc.setFontSize(16)
+        doc.text('OPTIMUM DIAGNOSTICS', 14, 15)
+
+        doc.setFontSize(12)
+        doc.text('PETTY CASH STATEMENT', 14, 23)
+
+        doc.setFontSize(10)
+
+        const periodText =
+             startDate && endDate
+             ? `Period: ${startDate} to ${endDate}`
+             : 'Period: All Transactions'
+        
+        doc.text(periodText, 14, 31)
+
+        //prepare the table rows
+        const tableRows = data.transactions.map(transaction => [
+            formatDate(transaction.transaction_date),
+            transaction.type,
+            transaction.type === 'received'
+             ? `${transaction.patient_name} - ${transaction.lab_number}`
+             : transaction.description,
+            transaction.receipt_number ||
+            transaction.mpesa_transaction_number ||
+            transaction.receipt_id ||
+            '-',
+             transaction.type === 'received'
+              ? transaction.payment_method
+              : transaction.expenditure_type,
+            `Ksh ${transaction.amount}`
+          ])
+
+          //generate the table
+          autoTable(doc, {
+            startY: 38,
+            head: [[
+              'Date',
+              'Type', 
+              'Details',
+              'Reference',
+              'Payment / Category',
+              'Amount'
+         ]],
+           body: tableRows
+})
+      const finalY = doc.lastAutoTable.finalY + 10
+
+      doc.text(
+        `Total Received: ksh ${data.total_received}`,
+        14,
+        finalY
+      )
+      
+      doc.text(
+        `Total Expenses: Ksh ${data.total_expenses}`,
+        14,
+        finalY + 7
+      )
+
+      doc.text(
+        `Net Amount: Ksh ${data.net_amount}`,
+        14,
+        finalY+ 14
+      )
+
+      doc.save('Optimum_Diagnostics_Statement.pdf')
+    }
+
+    
     return (
 <div>
             <h2>Transactions</h2>
@@ -220,6 +328,12 @@ function AdminTransactions({ onTransactionUpdated }) {
         onClick={clearFilters}
     >
         Clear
+    </button>
+    <button
+       type="button"
+        onClick={generateStatement}
+    >
+        Generate Statement
     </button>
 
 </div>
