@@ -10,7 +10,7 @@ function RecordReceived() {
     const [receiptNumber, setReceiptNumber] = useState('')
     const [mpesaTransactionNumber, setMpesaTransactionNumber] = useState('')
     const [dateReceived, setDateReceived] = useState('')
-    
+    const [receivedType, setReceivedType] = useState('patient_payment')
     /*
     Click Save Payment
       handleSubmit runs
@@ -35,16 +35,23 @@ function RecordReceived() {
             },
 
             body: JSON.stringify({
-                patient_name: patientName,
-                doctor_name: doctorName,
-                lab_number:labNumber,
-                amount: Number(amount),
-                payment_method: paymentMethod,
-                receipt_number: paymentMethod === 'cash' ? receiptNumber : null,
-                mpesa_transaction_number: paymentMethod === 'mpesa' ? mpesaTransactionNumber : null,
-                date_received: dateReceived
-            })
-        })
+               patient_name: receivedType === 'patient_payment' ? patientName : null,
+               doctor_name: receivedType === 'patient_payment' ? doctorName : null,
+               lab_number: receivedType === 'patient_payment' ? labNumber : null,
+
+               amount: Number(amount),
+               payment_method: paymentMethod,
+
+               receipt_number:
+               paymentMethod === 'cash' ? receiptNumber : null,
+
+               mpesa_transaction_number:
+               paymentMethod === 'mpesa' ? mpesaTransactionNumber : null,
+
+               date_received: dateReceived,
+               received_type: receivedType
+                   })
+                 })
 
         const data = await response.json()
 
@@ -60,10 +67,21 @@ function RecordReceived() {
             
             <div className="dashboard-content">
                 <h1>Record Received Payment</h1>
-                <p>Enter the details of the patient payment received</p>
+                <p>Record a patient payment or owner funding</p>
 
                 <form className="received-form" onSubmit={handleSubmit}>
-                    <label>Patient Name</label>
+                         <label>Received Type</label>
+                         <select
+                         value={receivedType}
+                         onChange={(e) => setReceivedType(e.target.value)}
+                         required
+                         >
+                          <option value="patient_payment">Patient Payment</option>
+                           <option value="owner_funding">Owner Funding</option>
+                          </select>
+                       {receivedType === 'patient_payment' && (
+                         <>
+                            <label>Patient Name</label>
                     <input
                      type="text"
                      value={patientName}
@@ -87,6 +105,8 @@ function RecordReceived() {
                        required
                       />
 
+                         </>
+                       )}
                       <label>Amount</label>
                       <input 
                        type="number" 

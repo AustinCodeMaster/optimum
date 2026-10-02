@@ -173,11 +173,15 @@ function Transactions() {
                                 <td>{transaction.type}</td>
                                 <td>
     {transaction.type === 'received' ? (
-        <>
-            {transaction.patient_name}
-            <br />
-            <small>Lab No: {transaction.lab_number}</small>
-        </>
+        transaction.received_type === 'owner_funding' ? (
+            <>owner_funding</>
+        ) : (
+            <>
+                {transaction.patient_name}
+                <br />
+                <small>Lab No: {transaction.lab_number}</small>
+            </>
+        )
     ) : (
         <>
             {transaction.description}
