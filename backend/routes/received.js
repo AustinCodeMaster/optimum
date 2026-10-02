@@ -20,23 +20,38 @@ router.post(   //creates the endpoint for recording a payment
             payment_method,
             receipt_number,
             mpesa_transaction_number,
-            date_received
+            date_received,
+            received_type
         } = req.body;  //gets the paymnet details sent from postman or later from react
 
         //Check that the required fields are provided
         if (
-            !patient_name ||
-            !doctor_name ||
-            !lab_number ||
             !amount ||
             !payment_method ||
-            !date_received  
+            !date_received ||
+            !received_type 
         ) {
             return res.status(400).json({
-                message: "Please provide all required fields"
+                 message: "Please provide all required fields"
             });
         }
 
+        if (
+            received_type !== "patient_payment" &&
+            received_type !== "owner_funding"
+        ) {
+            return res.status(400).json({
+                message: "Invalid received type"
+            });
+        }
+        
+        if (received_type === "patient_payment") {
+         if (!patient_name || !doctor_name || !lab_number) {
+        return res.status(400).json({
+            message: "Patient name, doctor name and lab number are required"
+            });
+           }
+        }
         //Amount must be greater that 0 and the amount is an integer
         if (!Number.isInteger(amount) || amount <=0) {
             return res.status(400).json({
@@ -82,19 +97,21 @@ router.post(   //creates the endpoint for recording a payment
                    receipt_number,
                    mpesa_transaction_number,
                    date_received,
-                   user_id
+                   user_id,
+                   received_type
                 )
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    patient_name,
-                    doctor_name,
-                    lab_number,
-                    amount,
-                    payment_method,
-                    receipt_number || null,
-                    mpesa_transaction_number || null,
-                    date_received,
-                    req.user.user_id  //records which loggedin staff user saved it
+                   received_type === "patient_payment" ? patient_name : null,
+                   received_type === "patient_payment" ? doctor_name : null,
+                   received_type === "patient_payment" ? lab_number : null,
+                   amount,
+                   payment_method,
+                   receipt_number || null,
+                   mpesa_transaction_number || null,
+                   date_received,
+                   req.user.user_id, //records which loggedin staff user saved it
+                   received_type
                 ]
             );
 
@@ -138,23 +155,36 @@ router.patch(
       payment_method,
       receipt_number,
       mpesa_transaction_number,
-      date_received
+      date_received,
+      received_type
       }  = req.body;
 
       //check that all required fields are provided
       if (
-        !patient_name ||
-        !doctor_name ||
-        !lab_number ||
-        !amount ||
-        !payment_method ||
-        !date_received
-      ) {
+           !amount ||
+           !payment_method ||
+           !date_received ||
+           !received_type
+       ) {
         return res.status(400).json({
             message: "Please provide all the required fields"
         });
       }
-
+       if (
+            received_type !== "patient_payment" &&
+            received_type !== "owner_funding"
+          ) {
+              return res.status(400).json({
+               message: "Invalid received type"
+        });
+      }
+              if (received_type === "patient_payment") {
+    if (!patient_name || !doctor_name || !lab_number) {
+        return res.status(400).json({
+            message: "Patient name, doctor name and lab number are required"
+        });
+    }
+}
       //validate the  amount
       if (!Number.isInteger(amount) || amount <=0) {
         return res.status(400).json({
@@ -194,17 +224,19 @@ router.patch(
                 payment_method = ?,
                 receipt_number = ?,
                 mpesa_transaction_number = ?,
-                date_received = ?
+                date_received = ?,
+                received_type = ?
             WHERE received_id = ?`,
             [
-                patient_name,
-                doctor_name,
-                lab_number,
+                received_type === "patient_payment" ? patient_name : null,
+                received_type === "patient_payment" ? doctor_name : null,
+                received_type === "patient_payment" ? lab_number : null,
                 amount,
                 payment_method,
                 receipt_number || null,
                 mpesa_transaction_number || null,
                 date_received,
+                received_type,
                 receivedId
             ] 
         );
