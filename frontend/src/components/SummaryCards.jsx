@@ -24,22 +24,76 @@ function SummaryCards({ refreshkey }) {
     }, [refreshkey])
 
     return (
-        <div className="summary-cards">
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
 
-            <div className="summary-card">
-                <p>Total Received</p>
-                <h2>Ksh {summary.total_received}</h2>
-            </div>
-            <div className="summary-card">
-                 <p>Total Expenses</p>
-                 <h2>Ksh {summary.total_expenses}</h2>
-            </div>
-            <div className="summary-card">
-                <p>Current Balance</p>
-                <h2>Ksh {summary.current_balance}</h2>
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
+            <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
+                    ↓
+                </div>
+
+                <div>
+                    <p className="text-sm font-medium text-slate-500">
+                        Total Received
+                    </p>
+
+                    <h2 className="mt-1 text-3xl font-bold text-emerald-700">
+                        Ksh {summary.total_received}
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                        Total amount received
+                    </p>
+                </div>
             </div>
         </div>
-    )
+
+        <div className="rounded-2xl border border-red-100 bg-red-50/60 p-6 shadow-sm">
+            <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-2xl text-red-700">
+                    ↑
+                </div>
+
+                <div>
+                    <p className="text-sm font-medium text-slate-500">
+                        Total Expenses
+                    </p>
+
+                    <h2 className="mt-1 text-3xl font-bold text-red-700">
+                        Ksh {summary.total_expenses}
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                        Total amount spent
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
+            <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-2xl text-blue-700">
+                    ₵
+                </div>
+
+                <div>
+                    <p className="text-sm font-medium text-slate-500">
+                        Current Balance
+                    </p>
+
+                    <h2 className="mt-1 text-3xl font-bold text-blue-700">
+                        Ksh {summary.current_balance}
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                        Available petty cash
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+)
 }
 
 export default SummaryCards

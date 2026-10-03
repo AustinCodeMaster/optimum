@@ -604,25 +604,29 @@ function AdminTransactions({ onTransactionUpdated }) {
                             )}
                           </td>
                           <td>{transaction.type}</td>
-                          <td>
-                               {transaction.type === 'received' ? (
-                                <>
-                                   {transaction.patient_name}
-                                   <br/>
-                                   <small>Lab No: {transaction.lab_number}</small>
-                                </>
-                               ) : (
-                                 <>
-                                    {transaction.description}
-                                    {transaction.destination && (
-                                        <>
-                                            <br />
-                                            <small>{transaction.destination}</small>
-                                        </>
-                                    )}
-                                 </>
-                               )}
-                          </td>
+                          <td> 
+    {transaction.type === 'received' ? ( 
+        transaction.received_type === 'owner_funding' ? (
+            <>owner funding</>
+        ) : (
+            <> 
+                {transaction.patient_name} 
+                <br/> 
+                <small>Lab No: {transaction.lab_number}</small> 
+            </>
+        )
+    ) : ( 
+        <> 
+            {transaction.description} 
+            {transaction.destination && ( 
+                <> 
+                    <br /> 
+                    <small>{transaction.destination}</small> 
+                </> 
+            )} 
+        </> 
+    )} 
+</td>
                            <td>
                             {transaction.receipt_number ||
                              transaction.mpesa_transaction_number ||

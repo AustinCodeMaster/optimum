@@ -87,24 +87,34 @@ function Transactions() {
             })
     },[])
     return (
-        <div className="dashboard-layout">
+        <div className="flex min-h-screen bg-slate-50">
             <Sidebar />
             
-            <div className='dashboard-content'>
-                <h1>Transactions</h1>
-                 <p>View and search all petty cash Transactions</p>
-                 <div className="transaction-filters">
+            <main className="min-w-0 flex-1 p-6 lg:p-8">
+                <div className="mb-6">
+                      <h1 className="text-3xl font-bold text-slate-900">
+                        Transactions
+                      </h1>
+                      <p className="mt-1 text-sm text-slate-500" >
+                        View and search all petty cash Transactions
+                      </p>
+                </div>
+                 <div className="mb-6 rounded-2xl border-slate-200 bg-white p-6 shadow-sm">
 
-    <input
-        type="text"
-        placeholder="Search transactions"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-    />
+    
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <input
+                    type="text"
+                    placeholder="Search transactions"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
 
     <select
         value={type}
         onChange={(e) => setType(e.target.value)}
+        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
     >
         <option value="">All Types</option>
         <option value="received">Received</option>
@@ -114,6 +124,7 @@ function Transactions() {
     <select
         value={paymentCategory}
         onChange={(e) => setPaymentCategory(e.target.value)}
+        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
     >
         <option value="">All Payment / Categories</option>
         <option value="cash">Cash</option>
@@ -127,39 +138,80 @@ function Transactions() {
         type="date"
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
     />
 
     <input
         type="date"
         value={endDate}
         onChange={(e) => setEndDate(e.target.value)}
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
     />
-
-    <button type="button" onClick={ () => fetchTransactions(1)}>
+                  </div>
+    <div className="mt-4 flex justify-end gap-3">
+        <button 
+        type="button"
+         onClick={ () => fetchTransactions(1)}
+         className="rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+         >
         Filter
     </button>
 
-    <button type="button" onClick={clearFilters}>
+    <button
+    type="button" 
+    onClick={clearFilters}
+    className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+    >
         Clear
     </button>
+    </div>
 
 </div>
-                 <table className="transaction-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Details</th>
-                            <th>Reference</th>
-                            <th>Payment/Category</th>
-                            <th>Amount</th>
+                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50">
+                        <tr className="border-b border-slate-200">
+                            <th
+                            className="px-4 py-3 text-left font-semibold text-slate-700"
+                            >
+                                Date
+                            </th>
+                            <th
+                            className="px-4 py-3 text-left font-semibold text-slate-700"
+                            >
+                                Type
+                            </th>
+                            <th
+                            className="px-4 py-3 text-left font-semibold text-slate-700"
+                            >
+                                Details
+                            </th>
+                            <th
+                            className="px-4 py-3 text-left font-semibold text-slate-700"
+                            >
+                                Reference
+                            </th>
+                            <th
+                            className="px-4 py-3 text-left font-semibold text-slate-700"
+                            >
+                                Payment/Category
+                            </th>
+                            <th
+                            className="px-4 py-3 text-left font-semibold text-slate-700"
+                            >
+                                Amount
+                            </th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {transactions.map(transaction => (
-                            <tr key={`${transaction.type}-${transaction.transaction_id}`}>
-                                <td>
+                            <tr 
+                            key={`${transaction.type}-${transaction.transaction_id}`}
+                            className="border-b border-slate-100 transition hover:bg-slate-50"
+                            >
+                                <td className="px-4 py-4 text-slate-700">
                                     {new Date(transaction.transaction_date).toLocaleDateString(
                                         'en-GB',
                                         {
@@ -170,57 +222,88 @@ function Transactions() {
                                     )}
                                 </td>
 
-                                <td>{transaction.type}</td>
-                                <td>
+                                <td className="px-4 py-4">
+                                    <span
+                                      className={
+                                      transaction.type === 'received'
+                                        ? 'inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700'
+                                        : 'inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700'
+                                        }
+                                    >
+                                        {transaction.type}
+                                    </span>
+                                </td>
+                               
+                                <td className="px-4 py-4">
     {transaction.type === 'received' ? (
         transaction.received_type === 'owner_funding' ? (
-            <>owner_funding</>
+            <div>
+                <p className="font-medium text-slate-800">
+                    Owner Funding
+                </p>
+
+                <p className="text-xs text-slate-500">
+                    Capital added by owner
+                </p>
+            </div>
         ) : (
-            <>
-                {transaction.patient_name}
-                <br />
-                <small>Lab No: {transaction.lab_number}</small>
-            </>
+            <div>
+                <p className="font-medium text-slate-800">
+                    {transaction.patient_name}
+                </p>
+
+                <p className="text-xs text-slate-500">
+                    Lab No: {transaction.lab_number}
+                </p>
+            </div>
         )
     ) : (
-        <>
-            {transaction.description}
+        <div>
+            <p className="font-medium text-slate-800">
+                {transaction.description}
+            </p>
+
             {transaction.destination && (
-                <>
-                    <br />
-                    <small>{transaction.destination}</small>
-                </>
+                <p className="text-xs text-slate-500">
+                    {transaction.destination}
+                </p>
             )}
-        </>
+        </div>
     )}
 </td>
-                                
-                               <td>
+                               <td className="px-4 py-4 text-slate-600">
                                   {transaction.receipt_number ||
                                    transaction.mpesa_transaction_number ||
                                    transaction.receipt_id ||
                                     '-'}
                                </td>
 
-                            <td>
+                            <td className="px-4 py-4 text-slate-600">
                                 {transaction.type === 'received'
                                  ? transaction.payment_method
                                  : transaction.expenditure_type}
                             </td>
 
-                            <td>Ksh {transaction.amount}</td>
+                            <td className="px-4 py-4 text-right text-base font-semibold text-slate-900">
+                                Ksh {transaction.amount}
+                            </td>
                                 
                             </tr>
                         ))}
                     </tbody>
                  </table>
-                 <div className="pagination">
+                    </div>
+                 </div>
+
+
+                 <div className="flex items-center justify-center gap-2 border-t border-slate-200 p-4">
 
     {/* Previous button goes to the page before the current page */}
     <button
         type="button"
         onClick={() => fetchTransactions(pagination.currentPage - 1)}
         disabled={pagination.currentPage === 1}
+        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
     >
         Previous
     </button>
@@ -235,9 +318,13 @@ function Transactions() {
             <button
                 type="button"
                 key={pageNumber}
-
                 // when this page number is clicked, fetch that page
                 onClick={() => fetchTransactions(pageNumber)}
+                className={
+                   pagination.currentPage === pageNumber
+                      ? 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white'
+                      : 'rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
+    }
             >
                 {pageNumber}
             </button>
@@ -248,15 +335,16 @@ function Transactions() {
     <button
         type="button"
         onClick={() => fetchTransactions(pagination.currentPage + 1)}
-
         // disable Next if we are already on the last page
         disabled={pagination.currentPage === pagination.totalPages}
+        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+
     >
         Next
     </button>
 
 </div>
-            </div>
+            </main>
         </div>
     )
 }
