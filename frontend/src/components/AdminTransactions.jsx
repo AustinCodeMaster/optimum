@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import '../pages/Transactions.css'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 function AdminTransactions({ onTransactionUpdated }) {
