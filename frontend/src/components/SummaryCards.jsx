@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'  //lets react remember data while the component is runnning
-import './SummaryCards.css'
 //useState= keeps the numbers
 //useEffect = goes to get the numbers
 function SummaryCards({ refreshkey }) {

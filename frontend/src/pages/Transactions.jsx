@@ -1,6 +1,5 @@
 import Sidebar from '../components/Sidebar.jsx'
 import { useState, useEffect} from 'react'
-import './Transactions.css'
 function Transactions() {
     const [transactions, setTransactions] = useState([])
     const [pagination, setPagination] = useState({

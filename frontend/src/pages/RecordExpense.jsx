@@ -1,7 +1,6 @@
 import Sidebar from '../components/Sidebar.jsx'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './RecordExpense.css'
 
 function RecordExpense() {
     const [amount, setAmount] = useState('')

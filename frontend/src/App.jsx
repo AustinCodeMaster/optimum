@@ -1,4 +1,3 @@
-import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom' 
 import Login from './pages/Login.jsx'
 import StaffDashboard from './pages/StaffDashboard.jsx'
