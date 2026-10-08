@@ -281,8 +281,8 @@ function AdminTransactions({ onTransactionUpdated }) {
 
     
     return (
-<div>
-            <h2>Transactions</h2>
+<div className="mt-8 min-w-0">
+            <h2 className="mb-6 text-3xl font-bold text-slate-900">Transactions</h2>
 
             <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -359,280 +359,359 @@ function AdminTransactions({ onTransactionUpdated }) {
                 </div>
 
 </div>
-   {selectedTransaction && selectedTransaction.type === 'received' && (
-    <form
-        className="edit-transaction-form"
-        onSubmit={handleSaveEdit}
-    >
-        <h3>Edit Received Transaction</h3>
+            {selectedTransaction && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="edit-transaction-title"
+                        className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-6"
+                    >
+                        {selectedTransaction && selectedTransaction.type === 'received' && (
+                            <form
+                                className="grid grid-cols-1 gap-5 md:grid-cols-2"
+                                onSubmit={handleSaveEdit}
+                            >
+                                <h3 id="edit-transaction-title" className="border-b border-slate-200 pb-4 text-xl font-bold text-slate-900 md:col-span-2">Edit Received Transaction</h3>
 
-        {/* Keep the received type read-only while editing transaction details */}
-        <label>Received Type</label>
-        <input
-            type="text"
-            value={selectedTransaction.received_type === 'patient_payment'
-                ? 'Patient Payment'
-                : 'Owner Funding'}
-            readOnly
-        />
+                                {/* Keep the received type read-only while editing transaction details */}
+                                <div className="md:col-span-2">
+                                    <label htmlFor="edit-received-received-type" className="mb-2 block text-sm font-semibold text-slate-700">Received Type</label>
+                                    <input
+                                        id="edit-received-received-type"
+                                        className="w-full rounded-lg border border-slate-300 bg-slate-50 text-slate-500 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        type="text"
+                                        value={selectedTransaction.received_type === 'patient_payment'
+                                            ? 'Patient Payment'
+                                            : 'Owner Funding'}
+                                        readOnly
+                                    />
+                                </div>
 
-        {/* Show patient fields only when editing a patient payment */}
-        {selectedTransaction.received_type === 'patient_payment' && (
-            <>
-                <label>Patient Name</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.patient_name || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            patient_name: e.target.value
-                        })
-                    }
-                    required
-                />
+                                {/* Show patient fields only when editing a patient payment */}
+                                {selectedTransaction.received_type === 'patient_payment' && (
+                                    <>
+                                        <div>
+                                            <label htmlFor="edit-received-patient-name" className="mb-2 block text-sm font-semibold text-slate-700">Patient Name</label>
+                                            <input
+                                                id="edit-received-patient-name"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.patient_name || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        patient_name: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
 
-                <label>Doctor Name</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.doctor_name || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            doctor_name: e.target.value
-                        })
-                    }
-                    required
-                />
+                                        <div>
+                                            <label htmlFor="edit-received-doctor-name" className="mb-2 block text-sm font-semibold text-slate-700">Doctor Name</label>
+                                            <input
+                                                id="edit-received-doctor-name"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.doctor_name || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        doctor_name: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
 
-                <label>Lab Number</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.lab_number || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            lab_number: e.target.value
-                        })
-                    }
-                    required
-                />
-            </>
-        )}
+                                        <div>
+                                            <label htmlFor="edit-received-lab-number" className="mb-2 block text-sm font-semibold text-slate-700">Lab Number</label>
+                                            <input
+                                                id="edit-received-lab-number"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.lab_number || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        lab_number: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-        {/* Received transaction amounts must be positive */}
-        <label>Amount</label>
-        <input
-            type="number"
-            min={1}
-            value={selectedTransaction.amount}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    amount: e.target.value
-                })
-            }
-            required
-        />
+                                {/* Received transaction amounts must be positive */}
+                                <div>
+                                    <label htmlFor="edit-received-amount" className="mb-2 block text-sm font-semibold text-slate-700">Amount</label>
+                                    <input
+                                        id="edit-received-amount"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        type="number"
+                                        min={1}
+                                        value={selectedTransaction.amount}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                amount: e.target.value
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
 
-        <label>Payment Method</label>
-        <select
-            value={selectedTransaction.payment_method}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    payment_method: e.target.value
-                })
-            }
-        >
-            <option value="cash">Cash</option>
-            <option value="mpesa">M-Pesa</option>
-        </select>
+                                <div className="md:col-span-2">
+                                    <label htmlFor="edit-received-payment-method" className="mb-2 block text-sm font-semibold text-slate-700">Payment Method</label>
+                                    <select
+                                        id="edit-received-payment-method"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        value={selectedTransaction.payment_method}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                payment_method: e.target.value
+                                            })
+                                        }
+                                    >
+                                        <option value="cash">Cash</option>
+                                        <option value="mpesa">M-Pesa</option>
+                                    </select>
+                                </div>
 
-        {selectedTransaction.payment_method === 'cash' && (
-            <>
-                <label>Receipt Number</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.receipt_number || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            receipt_number: e.target.value
-                        })
-                    }
-                    required
-                />
-            </>
-        )}
+                                {selectedTransaction.payment_method === 'cash' && (
+                                    <>
+                                        <div>
+                                            <label htmlFor="edit-received-receipt-number" className="mb-2 block text-sm font-semibold text-slate-700">Receipt Number</label>
+                                            <input
+                                                id="edit-received-receipt-number"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.receipt_number || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        receipt_number: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-        {selectedTransaction.payment_method === 'mpesa' && (
-            <>
-                <label>M-Pesa Transaction Number</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.mpesa_transaction_number || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            mpesa_transaction_number: e.target.value
-                        })
-                    }
-                    required
-                />
-            </>
-        )}
+                                {selectedTransaction.payment_method === 'mpesa' && (
+                                    <>
+                                        <div>
+                                            <label htmlFor="edit-received-m-pesa-transaction-number" className="mb-2 block text-sm font-semibold text-slate-700">M-Pesa Transaction Number</label>
+                                            <input
+                                                id="edit-received-m-pesa-transaction-number"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.mpesa_transaction_number || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        mpesa_transaction_number: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-        <label>Date</label>
-        <input
-            type="date"
-            value={formatDate(selectedTransaction.transaction_date)}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    transaction_date: e.target.value
-                })
-            }
-            required
-        />
+                                <div>
+                                    <label htmlFor="edit-received-date" className="mb-2 block text-sm font-semibold text-slate-700">Date</label>
+                                    <input
+                                        id="edit-received-date"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        type="date"
+                                        value={formatDate(selectedTransaction.transaction_date)}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                transaction_date: e.target.value
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
 
-        <button type="submit">
-            Save Changes
-        </button>
+                                <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end md:col-span-2">
+                                    <button type="submit" className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                                        Save Changes
+                                    </button>
 
-        <button
-            type="button"
-            onClick={() => setSelectedTransaction(null)}
-        >
-            Cancel
-        </button>
-    </form>
-)}
-{selectedTransaction && selectedTransaction.type === 'expense' && (
-    <form
-        className="edit-transaction-form"
-        onSubmit={handleSaveEdit}
-    >
-        <h3>Edit Expense</h3>
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                        onClick={() => setSelectedTransaction(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                        {selectedTransaction && selectedTransaction.type === 'expense' && (
+                            <form
+                                className="grid grid-cols-1 gap-5 md:grid-cols-2"
+                                onSubmit={handleSaveEdit}
+                            >
+                                <h3 id="edit-transaction-title" className="border-b border-slate-200 pb-4 text-xl font-bold text-slate-900 md:col-span-2">Edit Expense</h3>
 
-        <label>Amount</label>
-        <input
-            type="number"
-            value={selectedTransaction.amount}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    amount: e.target.value
-                })
-            }
-            required
-        />
+                                <div>
+                                    <label htmlFor="edit-expense-amount" className="mb-2 block text-sm font-semibold text-slate-700">Amount</label>
+                                    <input
+                                        id="edit-expense-amount"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        type="number"
+                                        value={selectedTransaction.amount}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                amount: e.target.value
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
 
-        <label>Description</label>
-        <input
-            type="text"
-            value={selectedTransaction.description || ''}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    description: e.target.value
-                })
-            }
-            required
-        />
+                                <div className="md:col-span-2">
+                                    <label htmlFor="edit-expense-description" className="mb-2 block text-sm font-semibold text-slate-700">Description</label>
+                                    <input
+                                        id="edit-expense-description"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        type="text"
+                                        value={selectedTransaction.description || ''}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                description: e.target.value
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
 
-        <label>Expense Type</label>
-        <select
-            value={selectedTransaction.expenditure_type}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    expenditure_type: e.target.value
-                })
-            }
-        >
-            <option value="transport">Transport</option>
-            <option value="supplies">Supplies</option>
-            <option value="other">Other</option>
-        </select>
+                                <div>
+                                    <label htmlFor="edit-expense-expense-type" className="mb-2 block text-sm font-semibold text-slate-700">Expense Type</label>
+                                    <select
+                                        id="edit-expense-expense-type"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        value={selectedTransaction.expenditure_type}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                expenditure_type: e.target.value
+                                            })
+                                        }
+                                    >
+                                        <option value="transport">Transport</option>
+                                        <option value="supplies">Supplies</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
 
-        {selectedTransaction.expenditure_type === 'transport' && (
-            <>
-                <label>Destination</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.destination || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            destination: e.target.value
-                        })
-                    }
-                    required
-                />
-            </>
-        )}
+                                {selectedTransaction.expenditure_type === 'transport' && (
+                                    <>
+                                        <div>
+                                            <label htmlFor="edit-expense-destination" className="mb-2 block text-sm font-semibold text-slate-700">Destination</label>
+                                            <input
+                                                id="edit-expense-destination"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.destination || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        destination: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-        {(selectedTransaction.expenditure_type === 'supplies' ||
-          selectedTransaction.expenditure_type === 'other') && (
-            <>
-                <label>Receipt ID</label>
-                <input
-                    type="text"
-                    value={selectedTransaction.receipt_id || ''}
-                    onChange={(e) =>
-                        setSelectedTransaction({
-                            ...selectedTransaction,
-                            receipt_id: e.target.value
-                        })
-                    }
-                    required={selectedTransaction.expenditure_type === 'supplies'}
-                />
-            </>
-        )}
+                                {(selectedTransaction.expenditure_type === 'supplies' ||
+                                  selectedTransaction.expenditure_type === 'other') && (
+                                    <>
+                                        <div>
+                                            <label htmlFor="edit-expense-receipt-id" className="mb-2 block text-sm font-semibold text-slate-700">Receipt ID</label>
+                                            <input
+                                                id="edit-expense-receipt-id"
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                type="text"
+                                                value={selectedTransaction.receipt_id || ''}
+                                                onChange={(e) =>
+                                                    setSelectedTransaction({
+                                                        ...selectedTransaction,
+                                                        receipt_id: e.target.value
+                                                    })
+                                                }
+                                                required={selectedTransaction.expenditure_type === 'supplies'}
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-        <label>Date</label>
-        <input
-            type="date"
-            value={formatDate(selectedTransaction.transaction_date)}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    transaction_date: e.target.value
-                })
-            }
-            required
-        />
+                                <div>
+                                    <label htmlFor="edit-expense-date" className="mb-2 block text-sm font-semibold text-slate-700">Date</label>
+                                    <input
+                                        id="edit-expense-date"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        type="date"
+                                        value={formatDate(selectedTransaction.transaction_date)}
+                                        onChange={(e) =>
+                                            setSelectedTransaction({
+                                                ...selectedTransaction,
+                                                transaction_date: e.target.value
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
 
-        <button type="submit">
-            Save Changes
-        </button>
+                                <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end md:col-span-2">
+                                    <button type="submit" className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                                        Save Changes
+                                    </button>
 
-        <button
-            type="button"
-            onClick={() => setSelectedTransaction(null)}
-        >
-            Cancel
-        </button>
-    </form>
-)}
-            <table className="transaction-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Details</th>
-                        <th>Reference</th>
-                        <th>Payment / Category</th>
-                        <th>Amount</th>
-                        <th>Actions</th>
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                        onClick={() => setSelectedTransaction(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+                <thead className="bg-slate-50">
+                    <tr className="border-b border-slate-200">
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700">Date</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700">Type</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700">Details</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700">Reference</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700">Payment / Category</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700">Amount</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-700">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     {transactions.map(transaction => (
-                        <tr key={`${transaction.type}-${transaction.transaction_id}`}>
-                          <td>
+                        <tr key={`${transaction.type}-${transaction.transaction_id}`} className="border-b border-slate-100 transition hover:bg-slate-50">
+                          <td className="px-4 py-4 text-slate-700">
                             {new Date(transaction.transaction_date).toLocaleDateString(
                                 'en-GB',
                                 {
@@ -642,48 +721,54 @@ function AdminTransactions({ onTransactionUpdated }) {
                                 }
                             )}
                           </td>
-                          <td>{transaction.type}</td>
-                          <td> 
+                          <td className="px-4 py-4">
+                            <span className={transaction.type === 'received'
+                                ? 'inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700'
+                                : 'inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700'}>
+                                {transaction.type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
     {transaction.type === 'received' ? ( 
         transaction.received_type === 'owner_funding' ? (
-            <>owner funding</>
+            <div>
+                <p className="font-medium text-slate-800">Owner Funding</p>
+                <p className="text-xs text-slate-500">Capital added by owner</p>
+            </div>
         ) : (
-            <> 
-                {transaction.patient_name} 
-                <br/> 
-                <small>Lab No: {transaction.lab_number}</small> 
-            </>
+            <div>
+                <p className="font-medium text-slate-800">{transaction.patient_name}</p>
+                <p className="text-xs text-slate-500">Lab No: {transaction.lab_number}</p>
+            </div>
         )
     ) : ( 
-        <> 
-            {transaction.description} 
+        <div>
+            <p className="font-medium text-slate-800">{transaction.description}</p>
             {transaction.destination && ( 
-                <> 
-                    <br /> 
-                    <small>{transaction.destination}</small> 
-                </> 
+                <p className="text-xs text-slate-500">{transaction.destination}</p>
             )} 
-        </> 
+        </div>
     )} 
 </td>
-                           <td>
+                           <td className="px-4 py-4 text-slate-600">
                             {transaction.receipt_number ||
                              transaction.mpesa_transaction_number ||
                              transaction.receipt_id ||
                              '-'}
                         </td>
 
-                        <td>
+                        <td className="px-4 py-4 text-slate-600">
                             {transaction.type === 'received'
                                 ? transaction.payment_method
                                 : transaction.expenditure_type}
                         </td>
 
-                        <td>Ksh {transaction.amount}</td>
+                        <td className="px-4 py-4 text-right text-base font-semibold text-slate-900">Ksh {transaction.amount}</td>
 
-                        <td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right">
                             <button 
                                type="button"
+                               className="inline-flex items-center rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                                onClick={() => setSelectedTransaction(transaction)}
                             >
                                 Edit
@@ -693,12 +778,15 @@ function AdminTransactions({ onTransactionUpdated }) {
                     ))}
                 </tbody>
             </table>
-            <div className="pagination">
+                </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 p-4">
 
     <button
         type="button"
         onClick={() => fetchTransactions(pagination.currentPage - 1)}
         disabled={pagination.currentPage === 1}
+        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
     >
         Previous
     </button>
@@ -711,6 +799,9 @@ function AdminTransactions({ onTransactionUpdated }) {
                 type="button"
                 key={pageNumber}
                 onClick={() => fetchTransactions(pageNumber)}
+                className={pagination.currentPage === pageNumber
+                    ? 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white'
+                    : 'rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
             >
                 {pageNumber}
             </button>
@@ -721,6 +812,7 @@ function AdminTransactions({ onTransactionUpdated }) {
         type="button"
         onClick={() => fetchTransactions(pagination.currentPage + 1)}
         disabled={pagination.currentPage === pagination.totalPages}
+        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
     >
         Next
     </button>
