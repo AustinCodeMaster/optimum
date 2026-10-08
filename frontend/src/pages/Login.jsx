@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './Login.css'
 import { useNavigate } from 'react-router-dom'
 
 function Login() {
@@ -42,41 +41,78 @@ function Login() {
     }
 
     return (
-        <div className="login-page">
-            <div className="login-card">
-
-                <h1>Welcome Back</h1>
-                <p>Please log in to continue</p>
-
-                <form onSubmit={handleSubmit}>
-                     {error && (
-                     <div className="login-error">
-                         {error}
-                     </div>
-                    )}
-                    <label>Username</label>
-                    <input
-                        type="text"
-                        placeholder="Enter your username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-
-                    <label>Password</label>
-                    <input
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
+        <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 sm:px-6">
+            <section
+                aria-labelledby="login-heading"
+                className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 sm:p-8"
+            >
+                <div className="mb-8 flex items-center justify-center gap-3">
                     
-                    <button type="submit">
+                    <div>
+                        <p className="text-sm font-bold tracking-wide text-slate-900">
+                            OPTIMUM DIAGNOSTICS
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Petty Cash Management
+                        </p>
+                    </div>
+                </div>
+
+                <h1 id="login-heading" className="text-center text-3xl font-bold tracking-tight text-slate-900">
+                    Welcome Back
+                </h1>
+                <p className="mt-2 text-center text-sm text-slate-500">
+                    Please log in to continue
+                </p>
+
+                <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                    {error && (
+                        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label htmlFor="username" className="mb-2 block text-sm font-semibold text-slate-700">
+                            Username
+                        </label>
+                        <input
+                            id="username"
+                            name="username"
+                            autoComplete="username"
+                            type="text"
+                            placeholder="Enter your username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            name="password"
+                            autoComplete="current-password"
+                            type="password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="w-full cursor-pointer rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    >
                         Login
                     </button>
                 </form>
-
-            </div>
-        </div>
+            </section>
+        </main>
     )
 }
 
