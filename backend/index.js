@@ -17,7 +17,9 @@ const statementRoutes = require("./routes/statement");
 
 const app = express();  // create the application
 
-app.use(cors()); //tells express to allows browers requests comming from another origin
+app.use(cors({
+    origin: process.env.FRONTEND_URL
+})); //tells express to allows browers requests comming from another origin
 app.use(express.json());// enables express to read JSON sent in requests
 
 // the real API routes
@@ -27,6 +29,23 @@ app.use("/api/received", receivedRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/summary", summaryRoutes );
 app.use("/api/statement", statementRoutes);
+
+// Global error handler
+app.use((err, req, res, next) => {
+    const status = err.status || 500;
+
+    // Don't expose internal server details to the frontend
+    if (status >= 500) {
+        console.error("Internal server error");
+    }
+
+    res.status(status).json({
+        message:
+            status >= 500
+                ? "Server error"
+                : err.message || "Request error"
+    });
+});
 
 //app.get() when a get request is made to this path,run this function
 //also used to confirm that the API is running
@@ -69,6 +88,9 @@ app.get("/", (req,res) => {
 //);
 
 // app.listen() starts the server on a port
-app.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
-});
+const PORT = process.env.PORT || 3000
+
+// app.listen() starts the server on a port
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+})

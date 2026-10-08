@@ -3,16 +3,41 @@
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const bcrypt = require("bcrypt");
+const rateLimit = require("express-rate-limit");
 const pool = require("../db");
 
 //create an express router for authentication routes
 const router = express.Router();
 
+// Limits repeated login attempts to reduce password guessing attacks
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 10,                // maximum 10 attempts
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: {
+        message: "Too many login attempts. Please try again later."
+    }
+});
+
 //handle POST requests to /api/auth/login
-router.post("/login", async (req,res) =>{
+router.post("/login", loginLimiter, async (req,res) =>{
 
     // Get th username and password sent in the request body
    const {username, password } = req.body;
+   
+   // Validate login input before checking the database
+if (
+    typeof username !== 'string' ||
+    typeof password !== 'string' ||
+    username.trim() === '' ||
+    password.trim() === ''
+) {
+    return res.status(400).json({
+        message: 'Username and password are required'
+    });
+}
 
    try {
     //search the database for a user with the provided username
