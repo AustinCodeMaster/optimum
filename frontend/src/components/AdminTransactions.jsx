@@ -99,9 +99,19 @@ function AdminTransactions({ onTransactionUpdated }) {
             url = `http://localhost:3000/api/received/${selectedTransaction.transaction_id}`
 
             body = {
-                 patient_name: selectedTransaction.patient_name,
-                 doctor_name: selectedTransaction.doctor_name,
-                 lab_number: selectedTransaction.lab_number,
+                 // Send received_type because the backend requires it
+                 received_type: selectedTransaction.received_type,
+                 // Patient details are only required for patient payments
+                 // Owner funding does not have patient, doctor, or lab details
+                 patient_name: selectedTransaction.received_type === 'patient_payment'
+                     ? selectedTransaction.patient_name
+                     : null,
+                 doctor_name: selectedTransaction.received_type === 'patient_payment'
+                     ? selectedTransaction.doctor_name
+                     : null,
+                 lab_number: selectedTransaction.received_type === 'patient_payment'
+                     ? selectedTransaction.lab_number
+                     : null,
                  amount: Number(selectedTransaction.amount),
                  payment_method: selectedTransaction.payment_method,
 
@@ -274,16 +284,19 @@ function AdminTransactions({ onTransactionUpdated }) {
 <div>
             <h2>Transactions</h2>
 
-            <div className="transaction-filters">
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 
     <input
         type="text"
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         placeholder="Search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
     />
 
     <select
+        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         value={type}
         onChange={(e) => setType(e.target.value)}
     >
@@ -293,6 +306,7 @@ function AdminTransactions({ onTransactionUpdated }) {
     </select>
 
     <select
+        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         value={paymentCategory}
         onChange={(e) => setPaymentCategory(e.target.value)}
     >
@@ -306,18 +320,23 @@ function AdminTransactions({ onTransactionUpdated }) {
 
     <input
         type="date"
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
     />
 
     <input
         type="date"
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         value={endDate}
         onChange={(e) => setEndDate(e.target.value)}
     />
 
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-3">
     <button
         type="button"
+        className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
         onClick={() => fetchTransactions(1)}
     >
         Filter
@@ -325,16 +344,19 @@ function AdminTransactions({ onTransactionUpdated }) {
 
     <button
         type="button"
+        className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         onClick={clearFilters}
     >
         Clear
     </button>
     <button
        type="button"
+        className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         onClick={generateStatement}
     >
         Generate Statement
     </button>
+                </div>
 
 </div>
    {selectedTransaction && selectedTransaction.type === 'received' && (
@@ -342,50 +364,67 @@ function AdminTransactions({ onTransactionUpdated }) {
         className="edit-transaction-form"
         onSubmit={handleSaveEdit}
     >
-        <h3>Edit Received Payment</h3>
+        <h3>Edit Received Transaction</h3>
 
-        <label>Patient Name</label>
+        {/* Keep the received type read-only while editing transaction details */}
+        <label>Received Type</label>
         <input
             type="text"
-            value={selectedTransaction.patient_name || ''}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    patient_name: e.target.value
-                })
-            }
-            required
+            value={selectedTransaction.received_type === 'patient_payment'
+                ? 'Patient Payment'
+                : 'Owner Funding'}
+            readOnly
         />
 
-        <label>Doctor Name</label>
-        <input
-            type="text"
-            value={selectedTransaction.doctor_name || ''}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    doctor_name: e.target.value
-                })
-            }
-            required
-        />
+        {/* Show patient fields only when editing a patient payment */}
+        {selectedTransaction.received_type === 'patient_payment' && (
+            <>
+                <label>Patient Name</label>
+                <input
+                    type="text"
+                    value={selectedTransaction.patient_name || ''}
+                    onChange={(e) =>
+                        setSelectedTransaction({
+                            ...selectedTransaction,
+                            patient_name: e.target.value
+                        })
+                    }
+                    required
+                />
 
-        <label>Lab Number</label>
-        <input
-            type="text"
-            value={selectedTransaction.lab_number || ''}
-            onChange={(e) =>
-                setSelectedTransaction({
-                    ...selectedTransaction,
-                    lab_number: e.target.value
-                })
-            }
-            required
-        />
+                <label>Doctor Name</label>
+                <input
+                    type="text"
+                    value={selectedTransaction.doctor_name || ''}
+                    onChange={(e) =>
+                        setSelectedTransaction({
+                            ...selectedTransaction,
+                            doctor_name: e.target.value
+                        })
+                    }
+                    required
+                />
 
+                <label>Lab Number</label>
+                <input
+                    type="text"
+                    value={selectedTransaction.lab_number || ''}
+                    onChange={(e) =>
+                        setSelectedTransaction({
+                            ...selectedTransaction,
+                            lab_number: e.target.value
+                        })
+                    }
+                    required
+                />
+            </>
+        )}
+
+        {/* Received transaction amounts must be positive */}
         <label>Amount</label>
         <input
             type="number"
+            min={1}
             value={selectedTransaction.amount}
             onChange={(e) =>
                 setSelectedTransaction({
