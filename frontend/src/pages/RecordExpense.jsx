@@ -2,6 +2,8 @@ import Sidebar from '../components/Sidebar.jsx'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const apiUrl = import.meta.env.VITE_API_URL
+
 function RecordExpense() {
     const [amount, setAmount] = useState('')
     const [expenseType, setExpenseType] = useState('')
@@ -17,39 +19,43 @@ function RecordExpense() {
 
         const token = localStorage.getItem('token')
 
-        const response = await fetch('http://localhost:3000/api/expense', {
-            method: 'POST',
+        try {
+            const response = await fetch(`${apiUrl}/api/expense`, {
+                method: 'POST',
 
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
 
-            body: JSON.stringify({
-                amount: Number(amount),
-                expenditure_type: expenseType,
-                description: description,
+                body: JSON.stringify({
+                    amount: Number(amount),
+                    expenditure_type: expenseType,
+                    description: description,
 
-                destination:
-                    expenseType === 'transport'
-                        ? destination
-                        : null,
+                    destination:
+                        expenseType === 'transport'
+                            ? destination
+                            : null,
 
-                receipt_id:
-                    expenseType === 'supplies' || expenseType === 'other'
-                        ? receiptId || null
-                        : null,
+                    receipt_id:
+                        expenseType === 'supplies' || expenseType === 'other'
+                            ? receiptId || null
+                            : null,
 
-                date_of_expense: dateOfExpense
+                    date_of_expense: dateOfExpense
+                })
             })
-        })
 
-        const data = await response.json()
+            const data = await response.json()
 
-        if (response.ok) {
-            alert('Expense recorded successfully')
-        } else {
-            alert(data.message)
+            if (response.ok) {
+                alert('Expense recorded successfully')
+            } else {
+                alert(data.message || 'Unable to record expense.')
+            }
+        } catch {
+            alert('Unable to contact the server or read its response. Please try again.')
         }
     }
 

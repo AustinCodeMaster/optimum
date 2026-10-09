@@ -1,29 +1,45 @@
 import { useState, useEffect } from 'react'  //lets react remember data while the component is runnning
 //useState= keeps the numbers
 //useEffect = goes to get the numbers
-function SummaryCards({ refreshkey }) {
+const apiUrl = import.meta.env.VITE_API_URL
+
+function SummaryCards({ refreshKey }) {
     const [summary, setSummary] = useState({
         total_received: 0,
         total_expenses: 0,
         current_balance: 0
     })
+    const [error, setError] = useState('')
     
     useEffect(() => {
         const token = localStorage.getItem('token') //get the JWT for the user
 
-        fetch('http://localhost:3000/api/summary', { //sends  a requuest to the backend summary api
+        fetch(`${apiUrl}/api/summary`, { //sends  a requuest to the backend summary api
             headers: {
                 Authorization: `Bearer ${token}`
             }
         }) 
-           .then(response => response.json())  //when the response comes back convert it to JSON
-           .then(data => {                     // when it is done save the data using setSummary saves the totals
+           .then(async response => {
+                const data = await response.json() //when the response comes back convert it to JSON
+                if (!response.ok) {
+                    setError(data.message || 'Unable to load summary.')
+                    return
+                }
+                setError('')
                 setSummary(data)
            })
-    }, [refreshkey])
+           .catch(() => {
+                setError('Unable to contact the server or read its response. Please try again.')
+           })
+    }, [refreshKey])
 
     return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        {error && (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 md:col-span-3">
+                {error}
+            </p>
+        )}
 
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
             <div className="flex items-center gap-4">

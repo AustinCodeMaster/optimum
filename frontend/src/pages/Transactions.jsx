@@ -1,7 +1,11 @@
 import Sidebar from '../components/Sidebar.jsx'
 import { useState, useEffect} from 'react'
+
+const apiUrl = import.meta.env.VITE_API_URL
+
 function Transactions() {
     const [transactions, setTransactions] = useState([])
+    const [error, setError] = useState('')
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -40,15 +44,23 @@ function Transactions() {
             params.append('expenditure_type', paymentCategory)
         }
         
-        fetch(`http://localhost:3000/api/transactions?${params.toString()}`, {
+        fetch(`${apiUrl}/api/transactions?${params.toString()}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
-           .then(response => response.json())
-           .then(data => {
+           .then(async response => {
+                const data = await response.json()
+                if (!response.ok) {
+                    setError(data.message || 'Unable to load transactions.')
+                    return
+                }
+                setError('')
                 setTransactions(data.data)
                 setPagination(data.pagination)
+           })
+           .catch(() => {
+                setError('Unable to contact the server or read its response. Please try again.')
            })
     }  
     function clearFilters() {
@@ -60,29 +72,45 @@ function Transactions() {
 
         const token = localStorage.getItem('token')
 
-        fetch('http://localhost:3000/api/transactions', {
+        fetch(`${apiUrl}/api/transactions`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
-          .then(response => response.json())
-          .then(data => {
-            setTransactions(data.data)
-            setPagination(data.pagination)
+          .then(async response => {
+                const data = await response.json()
+                if (!response.ok) {
+                    setError(data.message || 'Unable to load transactions.')
+                    return
+                }
+                setError('')
+                setTransactions(data.data)
+                setPagination(data.pagination)
+          })
+          .catch(() => {
+                setError('Unable to contact the server or read its response. Please try again.')
           })
     }    
     useEffect(() => {
         const token = localStorage.getItem('token')
 
-        fetch('http://localhost:3000/api/transactions', {
+        fetch(`${apiUrl}/api/transactions`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
-            .then(response=> response.json())
-            .then(data => {
+            .then(async response => {
+                const data = await response.json()
+                if (!response.ok) {
+                    setError(data.message || 'Unable to load transactions.')
+                    return
+                }
+                setError('')
                 setTransactions(data.data)
                 setPagination(data.pagination)
+            })
+            .catch(() => {
+                setError('Unable to contact the server or read its response. Please try again.')
             })
     },[])
     return (
@@ -98,6 +126,12 @@ function Transactions() {
                         View and search all petty cash Transactions
                       </p>
                 </div>
+                {error && (
+                    <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
+                    </p>
+                )}
+
                  <div className="mb-6 rounded-2xl border-slate-200 bg-white p-6 shadow-sm">
 
     

@@ -11,32 +11,44 @@ function Login() {
     
     async function handleSubmit(e) {
         e.preventDefault()
+        setError('')
 
-        const response = await fetch('http://localhost:3000/api/auth/login', {  //sends the reuest tthe backend
-            method: 'POST', //mathed the backend login route
-            headers: {
-                'Content-Type': 'application/json'  //tells Exoress we are sending JSON
-            },
-            body: JSON.stringify({  //conversts the javascript object into JSON text
-                username: username,
-                password: password
+        const apiUrl = import.meta.env.VITE_API_URL
+
+        if (!apiUrl) {
+            setError('The server address is not configured.')
+            return
+        }
+
+        try {
+            const response = await fetch(`${apiUrl}/api/auth/login`, {  //sends the reuest tthe backend
+                method: 'POST', //mathed the backend login route
+                headers: {
+                    'Content-Type': 'application/json'  //tells Exoress we are sending JSON
+                },
+                body: JSON.stringify({  //conversts the javascript object into JSON text
+                    username: username,
+                    password: password
+                })
             })
-        })
-        //reads the response that comes from the backend
-        const data = await response.json()
+            //reads the response that comes from the backend
+            const data = await response.json()
 
-        if (response.ok) {
-            setError('')
-            localStorage.setItem('token', data.token)
-            localStorage.setItem('user', JSON.stringify(data.user))
-            
-            if(data.user.role === 'staff') {
-                navigate('/staff/dashboard')
-            }else if (data.user.role === 'admin') {
-                navigate('/admin/dashboard')
+            if (response.ok) {
+                setError('')
+                localStorage.setItem('token', data.token)
+                localStorage.setItem('user', JSON.stringify(data.user))
+
+                if(data.user.role === 'staff') {
+                    navigate('/staff/dashboard')
+                }else if (data.user.role === 'admin') {
+                    navigate('/admin/dashboard')
+                }
+            } else {
+                setError(data.message || 'Login failed. Please try again.')
             }
-        } else {
-            setError(data.message)
+        } catch {
+            setError('Unable to contact the server or read its response. Please try again.')
         }
     }
 

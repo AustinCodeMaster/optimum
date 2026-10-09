@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+
+const apiUrl = import.meta.env.VITE_API_URL
+
 function AdminTransactions({ onTransactionUpdated }) {
     const [transactions, setTransactions] = useState([])
     const [pagination, setPagination] = useState({
@@ -14,6 +17,7 @@ function AdminTransactions({ onTransactionUpdated }) {
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
     const [selectedTransaction, setSelectedTransaction] = useState(null)
+    const [error, setError] = useState('')
 
     function fetchTransactions(page = 1) {
         const token = localStorage.getItem('token')
@@ -41,22 +45,31 @@ function AdminTransactions({ onTransactionUpdated }) {
             params.append('expenditure_type', paymentCategory)
         }
 
-        fetch(`http://localhost:3000/api/transactions?${params.toString()}`, {
+        fetch(`${apiUrl}/api/transactions?${params.toString()}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })  
-             .then(response => response.json())
-             .then(data => {
-            setTransactions(data.data)
-            setPagination(data.pagination)
-        })    
+             .then(async response => {
+                 const data = await response.json()
+                 if (!response.ok) {
+                     setError(data.message || 'Unable to load transactions.')
+                     return
+                 }
+                 setError('')
+                 setTransactions(data.data)
+                 setPagination(data.pagination)
+             })
+             .catch(() => {
+                 setError('Unable to contact the server or read its response. Please try again.')
+             })
     }
     useEffect(() => {
         fetchTransactions(1)
     }, [])
     
     function clearFilters() {
+        setError('')
         setSearch('')
         setType('')
         setPaymentCategory('')
@@ -65,15 +78,23 @@ function AdminTransactions({ onTransactionUpdated }) {
 
         const token = localStorage.getItem('token')
 
-        fetch('http://localhost:3000/api/transactions?page=1', {
+        fetch(`${apiUrl}/api/transactions?page=1`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
-          .then(response => response.json())
-          .then(data => {
+          .then(async response => {
+            const data = await response.json()
+            if (!response.ok) {
+                setError(data.message || 'Unable to load transactions.')
+                return
+            }
+            setError('')
             setTransactions(data.data)
             setPagination(data.pagination)
+          })
+          .catch(() => {
+            setError('Unable to contact the server or read its response. Please try again.')
           })
     }
     //This formatDate function is to convert the transaction date into the YYY-MM-DD format that the database expects
@@ -95,7 +116,7 @@ function AdminTransactions({ onTransactionUpdated }) {
         let body  //holds the transaction data we want to send
 
         if (selectedTransaction.type === 'received') {
-            url = `http://localhost:3000/api/received/${selectedTransaction.transaction_id}`
+            url = `${apiUrl}/api/received/${selectedTransaction.transaction_id}`
 
             body = {
                  // Send received_type because the backend requires it
@@ -127,7 +148,7 @@ function AdminTransactions({ onTransactionUpdated }) {
                 date_received: formatDate(selectedTransaction.transaction_date)
             }
         } else {
-            url = `http://localhost:3000/api/expense/${selectedTransaction.transaction_id}`
+            url = `${apiUrl}/api/expense/${selectedTransaction.transaction_id}`
 
             body = {
             amount: Number(selectedTransaction.amount),
@@ -149,27 +170,31 @@ function AdminTransactions({ onTransactionUpdated }) {
            }
         }
 
-        const response = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(body)
-        })
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(body)
+            })
 
-        const data = await response.json()
+            const data = await response.json()
 
-        if (response.ok) {
-            alert('Transaction updated successfully')
+            if (response.ok) {
+                alert('Transaction updated successfully')
 
-            setSelectedTransaction(null)
+                setSelectedTransaction(null)
 
-            fetchTransactions(pagination.currentPage)
+                fetchTransactions(pagination.currentPage)
 
-            onTransactionUpdated()
-        } else {
-            alert(data.message)
+                onTransactionUpdated()
+            } else {
+                alert(data.message || 'Unable to update transaction.')
+            }
+        } catch {
+            alert('Unable to contact the server or read its response. Please try again.')
         }
     }
     async function generateStatement() {
@@ -194,18 +219,24 @@ function AdminTransactions({ onTransactionUpdated }) {
             params.append('expenditure_type', paymentCategory)
         }
 
-        const response = await fetch(
-            `http://localhost:3000/api/statement?${params.toString()}`,
-             {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-             }
-        )
-        const data = await response.json()
+        let data
+        try {
+            const response = await fetch(
+                `${apiUrl}/api/statement?${params.toString()}`,
+                 {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                 }
+            )
+            data = await response.json()
 
-        if (!response.ok) {
-            alert(data.message)
+            if (!response.ok) {
+                alert(data.message || 'Unable to load statement.')
+                return
+            }
+        } catch {
+            alert('Unable to contact the server or read its response. Please try again.')
             return
         }
         const doc = new jsPDF()
@@ -282,6 +313,8 @@ function AdminTransactions({ onTransactionUpdated }) {
     return (
 <div className="mt-8 min-w-0">
             <h2 className="mb-6 text-3xl font-bold text-slate-900">Transactions</h2>
+
+            {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
 
             <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">

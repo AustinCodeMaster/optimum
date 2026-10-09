@@ -2,6 +2,8 @@ import Sidebar from '../components/Sidebar.jsx'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const apiUrl = import.meta.env.VITE_API_URL
+
 function RecordReceived() {
     const [patientName, setPatientName] = useState('')
     const [doctorName, setDoctorName] = useState('')
@@ -20,48 +22,52 @@ function RecordReceived() {
 
         const token = localStorage.getItem('token')
 
-        const response = await fetch('http://localhost:3000/api/received', {
-            method: 'POST',
+        try {
+            const response = await fetch(`${apiUrl}/api/received`, {
+                method: 'POST',
 
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
 
-            body: JSON.stringify({
-                patient_name:
-                    receivedType === 'patient_payment' ? patientName : null,
+                body: JSON.stringify({
+                    patient_name:
+                        receivedType === 'patient_payment' ? patientName : null,
 
-                doctor_name:
-                    receivedType === 'patient_payment' ? doctorName : null,
+                    doctor_name:
+                        receivedType === 'patient_payment' ? doctorName : null,
 
-                lab_number:
-                    receivedType === 'patient_payment' ? labNumber : null,
+                    lab_number:
+                        receivedType === 'patient_payment' ? labNumber : null,
 
-                amount: Number(amount),
+                    amount: Number(amount),
 
-                payment_method: paymentMethod,
+                    payment_method: paymentMethod,
 
-                receipt_number:
-                    paymentMethod === 'cash' ? receiptNumber : null,
+                    receipt_number:
+                        paymentMethod === 'cash' ? receiptNumber : null,
 
-                mpesa_transaction_number:
-                    paymentMethod === 'mpesa'
-                        ? mpesaTransactionNumber
-                        : null,
+                    mpesa_transaction_number:
+                        paymentMethod === 'mpesa'
+                            ? mpesaTransactionNumber
+                            : null,
 
-                date_received: dateReceived,
+                    date_received: dateReceived,
 
-                received_type: receivedType
+                    received_type: receivedType
+                })
             })
-        })
 
-        const data = await response.json()
+            const data = await response.json()
 
-        if (response.ok) {
-            alert('Payment recorded successfully')
-        } else {
-            alert(data.message)
+            if (response.ok) {
+                alert('Payment recorded successfully')
+            } else {
+                alert(data.message || 'Unable to record payment.')
+            }
+        } catch {
+            alert('Unable to contact the server or read its response. Please try again.')
         }
     }
 

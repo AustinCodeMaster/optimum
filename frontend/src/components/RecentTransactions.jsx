@@ -1,19 +1,31 @@
 import { useState, useEffect } from 'react'
+
+const apiUrl = import.meta.env.VITE_API_URL
+
 function RecentTransactions() {
     const [transactions, setTransactions] = useState([]) //this means react should remember the transactions
+    const [error, setError] = useState('')
 
     
     useEffect( () => {
         const token = localStorage.getItem('token')
 
-        fetch('http://localhost:3000/api/transactions',{
+        fetch(`${apiUrl}/api/transactions`,{
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
-           .then(response => response.json())  
-           .then(data => {
-            setTransactions(data.data.slice(0,5))
+           .then(async response => {
+                const data = await response.json()
+                if (!response.ok) {
+                    setError(data.message || 'Unable to load recent transactions.')
+                    return
+                }
+                setError('')
+                setTransactions(data.data.slice(0,5))
+           })
+           .catch(() => {
+                setError('Unable to contact the server or read its response. Please try again.')
            })
         
     }, [])
@@ -29,6 +41,12 @@ function RecentTransactions() {
                 Latest petty cash activity
             </p>
         </div>
+
+        {error && (
+            <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+            </p>
+        )}
 
         <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
