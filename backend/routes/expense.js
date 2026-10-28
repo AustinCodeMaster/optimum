@@ -140,7 +140,7 @@ router.post(
 router.patch(
     "/:id",
     authenticateToken,
-    authorizeRole("admin"),
+    authorizeRole("admin", "staff"),
     async (req, res) => {
 
         //gets the expenseId from the URL and converts it to a number
@@ -221,7 +221,27 @@ router.patch(
         }
 
         // UPDATE expense query
-        try {
+                try {
+            const rows = await pool.query(
+                `SELECT * FROM expense
+                 WHERE expense_id = ? AND deleted_at IS NULL`,
+                [expenseId]
+            );
+
+            if (rows.length === 0) {
+                return res.status(404).json({
+                    message: "Expense not found"
+                });
+            }
+
+            const oldExpense = rows[0];
+
+            if (req.user.role === "staff" && oldExpense.user_id !== req.user.user_id) {
+                return res.status(403).json({
+                    message: "You can only edit your own expenses"
+                });
+            }
+
             const result = await pool.query(
                 `UPDATE expense
                 SET amount = ?,
@@ -229,9 +249,11 @@ router.patch(
                     description = ?,
                     destination = ?,
                     receipt_id = ?,
-                    date_of_expense = ?
+                    date_of_expense = ?,
+                    updated_at = NOW(),
+                    updated_by = ?
                 WHERE expense_id = ? `,
-                
+
                 [
                     amount,
                     expenditure_type,
@@ -239,17 +261,38 @@ router.patch(
                     destination || null,
                     receipt_id || null,
                     date_of_expense,
+                    req.user.user_id,
                     expenseId
                 ]
             );
-            
             //check whether the expesnse actually exists
             if (result.affectedRows === 0) {
                 return res.status(404).json({
                     message: "Expense not found"
                 });
             }
-
+           //record the edit in the audit log
+           await pool.query(
+             `INSERT INTO audit_log
+             (entity, entity_id, action, changed_by, old_values, new_values)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+             [
+                "expense",
+                 expenseId,
+                 "edit",
+                 req.user.user_id,
+                 JSON.stringify(oldExpense),
+                 JSON.stringify({
+                        amount,
+                        expenditure_type,
+                        description,
+                        destination: destination || null,
+                        receipt_id: receipt_id || null,
+                        date_of_expense
+                    })
+             ]
+           );
+           
             //succesaful correction
             res.status(200).json({
                 message: "Expense updated successfully"
