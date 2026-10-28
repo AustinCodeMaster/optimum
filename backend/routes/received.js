@@ -21,7 +21,8 @@ router.post(   //creates the endpoint for recording a payment
             receipt_number,
             mpesa_transaction_number,
             date_received,
-            received_type
+            received_type,
+            request_id
         } = req.body;  //gets the paymnet details sent from postman or later from react
 
         //Check that the required fields are provided
@@ -98,9 +99,10 @@ router.post(   //creates the endpoint for recording a payment
                    mpesa_transaction_number,
                    date_received,
                    user_id,
-                   received_type
+                   received_type,
+                   request_id
                 )
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                    received_type === "patient_payment" ? patient_name : null,
                    received_type === "patient_payment" ? doctor_name : null,
@@ -111,7 +113,8 @@ router.post(   //creates the endpoint for recording a payment
                    mpesa_transaction_number || null,
                    date_received,
                    req.user.user_id, //records which loggedin staff user saved it
-                   received_type
+                   received_type,
+                   request_id || null
                 ]
             );
 
@@ -121,7 +124,25 @@ router.post(   //creates the endpoint for recording a payment
             });
         } catch(error) {
             console.error(error);
+              if (
+                error.code === "ER_DUP_ENTRY" &&
+                error.errno === 1062 &&
+                request_id
+            ) {
+                const rows = await pool.query(
+                    `SELECT received_id
+                     FROM received
+                     WHERE request_id = ? AND user_id = ?`,
+                    [request_id, req.user.user_id]
+                );
 
+                if (rows.length > 0) {
+                    return res.status(200).json({
+                        message: "Payment already recorded",
+                        received_id: Number(rows[0].received_id)
+                    });
+                }
+            }
             res.status(500).json({
                 message: "Server error"
             });
