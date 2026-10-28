@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import TransactionEditModal from './TransactionEditModal.jsx'
+import TransactionDeleteModal from './TransactionDeleteModal.jsx'
 
 const apiUrl = import.meta.env.VITE_API_URL
 
@@ -17,6 +19,7 @@ function AdminTransactions({ onTransactionUpdated }) {
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
     const [selectedTransaction, setSelectedTransaction] = useState(null)
+    const [transactionToDelete, setTransactionToDelete] = useState(null)
     const [error, setError] = useState('')
 
     function fetchTransactions(page = 1) {
@@ -45,7 +48,7 @@ function AdminTransactions({ onTransactionUpdated }) {
             params.append('expenditure_type', paymentCategory)
         }
 
-        fetch(`${apiUrl}/api/transactions?${params.toString()}`, {
+        return fetch(`${apiUrl}/api/transactions?${params.toString()}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -54,15 +57,25 @@ function AdminTransactions({ onTransactionUpdated }) {
                  const data = await response.json()
                  if (!response.ok) {
                      setError(data.message || 'Unable to load transactions.')
-                     return
+                      return false
                  }
+                  // Deleting the last row on a page can reduce the page count.
+                  const lastPage = Math.max(1, Number(data.pagination.totalPages))
+                  if (page > lastPage) return fetchTransactions(lastPage)
                  setError('')
                  setTransactions(data.data)
                  setPagination(data.pagination)
+                  return true
              })
              .catch(() => {
                  setError('Unable to contact the server or read its response. Please try again.')
+                  return false
              })
+    }
+    async function handleTransactionChanged() {
+        onTransactionUpdated?.()
+        const refreshed = await fetchTransactions(pagination.currentPage)
+        if (!refreshed) throw new Error('Unable to refresh transactions')
     }
     useEffect(() => {
         fetchTransactions(1)
@@ -107,96 +120,6 @@ function AdminTransactions({ onTransactionUpdated }) {
 
     return `${year}-${month}-${day}`
 }
-    async function handleSaveEdit(e) {
-        e.preventDefault()
-
-        const token = localStorage.getItem('token')
-
-        let url //holds the backend endpoint we want to send the PATCH request to
-        let body  //holds the transaction data we want to send
-
-        if (selectedTransaction.type === 'received') {
-            url = `${apiUrl}/api/received/${selectedTransaction.transaction_id}`
-
-            body = {
-                 // Send received_type because the backend requires it
-                 received_type: selectedTransaction.received_type,
-                 // Patient details are only required for patient payments
-                 // Owner funding does not have patient, doctor, or lab details
-                 patient_name: selectedTransaction.received_type === 'patient_payment'
-                     ? selectedTransaction.patient_name
-                     : null,
-                 doctor_name: selectedTransaction.received_type === 'patient_payment'
-                     ? selectedTransaction.doctor_name
-                     : null,
-                 lab_number: selectedTransaction.received_type === 'patient_payment'
-                     ? selectedTransaction.lab_number
-                     : null,
-                 amount: Number(selectedTransaction.amount),
-                 payment_method: selectedTransaction.payment_method,
-
-                 receipt_number:
-                    selectedTransaction.payment_method === 'cash'
-                    ? selectedTransaction.receipt_number
-                    :null,
-                
-                mpesa_transaction_number:
-                    selectedTransaction.payment_method === 'mpesa'
-                    ? selectedTransaction.mpesa_transaction_number
-                    :null,
-                
-                date_received: formatDate(selectedTransaction.transaction_date)
-            }
-        } else {
-            url = `${apiUrl}/api/expense/${selectedTransaction.transaction_id}`
-
-            body = {
-            amount: Number(selectedTransaction.amount),
-            description: selectedTransaction.description,
-            expenditure_type: selectedTransaction.expenditure_type,
-
-            destination:
-                selectedTransaction.expenditure_type === 'transport'
-                    ? selectedTransaction.destination
-                    : null,
-
-            receipt_id:
-                selectedTransaction.expenditure_type === 'supplies' ||
-                selectedTransaction.expenditure_type === 'other'
-                    ? selectedTransaction.receipt_id || null
-                    : null,
-
-            date_of_expense: formatDate(selectedTransaction.transaction_date)
-           }
-        }
-
-        try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(body)
-            })
-
-            const data = await response.json()
-
-            if (response.ok) {
-                alert('Transaction updated successfully')
-
-                setSelectedTransaction(null)
-
-                fetchTransactions(pagination.currentPage)
-
-                onTransactionUpdated()
-            } else {
-                alert(data.message || 'Unable to update transaction.')
-            }
-        } catch {
-            alert('Unable to contact the server or read its response. Please try again.')
-        }
-    }
     async function generateStatement() {
         const token = localStorage.getItem('token')
 
@@ -391,340 +314,16 @@ function AdminTransactions({ onTransactionUpdated }) {
                 </div>
 
 </div>
-            {selectedTransaction && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="edit-transaction-title"
-                        className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-6"
-                    >
-                        {selectedTransaction && selectedTransaction.type === 'received' && (
-                            <form
-                                className="grid grid-cols-1 gap-5 md:grid-cols-2"
-                                onSubmit={handleSaveEdit}
-                            >
-                                <h3 id="edit-transaction-title" className="border-b border-slate-200 pb-4 text-xl font-bold text-slate-900 md:col-span-2">Edit Received Transaction</h3>
-
-                                {/* Keep the received type read-only while editing transaction details */}
-                                <div className="md:col-span-2">
-                                    <label htmlFor="edit-received-received-type" className="mb-2 block text-sm font-semibold text-slate-700">Received Type</label>
-                                    <input
-                                        id="edit-received-received-type"
-                                        className="w-full rounded-lg border border-slate-300 bg-slate-50 text-slate-500 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        type="text"
-                                        value={selectedTransaction.received_type === 'patient_payment'
-                                            ? 'Patient Payment'
-                                            : 'Owner Funding'}
-                                        readOnly
-                                    />
-                                </div>
-
-                                {/* Show patient fields only when editing a patient payment */}
-                                {selectedTransaction.received_type === 'patient_payment' && (
-                                    <>
-                                        <div>
-                                            <label htmlFor="edit-received-patient-name" className="mb-2 block text-sm font-semibold text-slate-700">Patient Name</label>
-                                            <input
-                                                id="edit-received-patient-name"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.patient_name || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        patient_name: e.target.value
-                                                    })
-                                                }
-                                                required
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label htmlFor="edit-received-doctor-name" className="mb-2 block text-sm font-semibold text-slate-700">Doctor Name</label>
-                                            <input
-                                                id="edit-received-doctor-name"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.doctor_name || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        doctor_name: e.target.value
-                                                    })
-                                                }
-                                                required
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label htmlFor="edit-received-lab-number" className="mb-2 block text-sm font-semibold text-slate-700">Lab Number</label>
-                                            <input
-                                                id="edit-received-lab-number"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.lab_number || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        lab_number: e.target.value
-                                                    })
-                                                }
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* Received transaction amounts must be positive */}
-                                <div>
-                                    <label htmlFor="edit-received-amount" className="mb-2 block text-sm font-semibold text-slate-700">Amount</label>
-                                    <input
-                                        id="edit-received-amount"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        type="number"
-                                        min={1}
-                                        value={selectedTransaction.amount}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                amount: e.target.value
-                                            })
-                                        }
-                                        required
-                                    />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label htmlFor="edit-received-payment-method" className="mb-2 block text-sm font-semibold text-slate-700">Payment Method</label>
-                                    <select
-                                        id="edit-received-payment-method"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        value={selectedTransaction.payment_method}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                payment_method: e.target.value
-                                            })
-                                        }
-                                    >
-                                        <option value="cash">Cash</option>
-                                        <option value="mpesa">M-Pesa</option>
-                                    </select>
-                                </div>
-
-                                {selectedTransaction.payment_method === 'cash' && (
-                                    <>
-                                        <div>
-                                            <label htmlFor="edit-received-receipt-number" className="mb-2 block text-sm font-semibold text-slate-700">Receipt Number</label>
-                                            <input
-                                                id="edit-received-receipt-number"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.receipt_number || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        receipt_number: e.target.value
-                                                    })
-                                                }
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                {selectedTransaction.payment_method === 'mpesa' && (
-                                    <>
-                                        <div>
-                                            <label htmlFor="edit-received-m-pesa-transaction-number" className="mb-2 block text-sm font-semibold text-slate-700">M-Pesa Transaction Number</label>
-                                            <input
-                                                id="edit-received-m-pesa-transaction-number"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.mpesa_transaction_number || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        mpesa_transaction_number: e.target.value
-                                                    })
-                                                }
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                <div>
-                                    <label htmlFor="edit-received-date" className="mb-2 block text-sm font-semibold text-slate-700">Date</label>
-                                    <input
-                                        id="edit-received-date"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        type="date"
-                                        value={formatDate(selectedTransaction.transaction_date)}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                transaction_date: e.target.value
-                                            })
-                                        }
-                                        required
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end md:col-span-2">
-                                    <button type="submit" className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-                                        Save Changes
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                                        onClick={() => setSelectedTransaction(null)}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                        {selectedTransaction && selectedTransaction.type === 'expense' && (
-                            <form
-                                className="grid grid-cols-1 gap-5 md:grid-cols-2"
-                                onSubmit={handleSaveEdit}
-                            >
-                                <h3 id="edit-transaction-title" className="border-b border-slate-200 pb-4 text-xl font-bold text-slate-900 md:col-span-2">Edit Expense</h3>
-
-                                <div>
-                                    <label htmlFor="edit-expense-amount" className="mb-2 block text-sm font-semibold text-slate-700">Amount</label>
-                                    <input
-                                        id="edit-expense-amount"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        type="number"
-                                        value={selectedTransaction.amount}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                amount: e.target.value
-                                            })
-                                        }
-                                        required
-                                    />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label htmlFor="edit-expense-description" className="mb-2 block text-sm font-semibold text-slate-700">Description</label>
-                                    <input
-                                        id="edit-expense-description"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        type="text"
-                                        value={selectedTransaction.description || ''}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                description: e.target.value
-                                            })
-                                        }
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="edit-expense-expense-type" className="mb-2 block text-sm font-semibold text-slate-700">Expense Type</label>
-                                    <select
-                                        id="edit-expense-expense-type"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        value={selectedTransaction.expenditure_type}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                expenditure_type: e.target.value
-                                            })
-                                        }
-                                    >
-                                        <option value="transport">Transport</option>
-                                        <option value="supplies">Supplies</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-
-                                {selectedTransaction.expenditure_type === 'transport' && (
-                                    <>
-                                        <div>
-                                            <label htmlFor="edit-expense-destination" className="mb-2 block text-sm font-semibold text-slate-700">Destination</label>
-                                            <input
-                                                id="edit-expense-destination"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.destination || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        destination: e.target.value
-                                                    })
-                                                }
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                {(selectedTransaction.expenditure_type === 'supplies' ||
-                                  selectedTransaction.expenditure_type === 'other') && (
-                                    <>
-                                        <div>
-                                            <label htmlFor="edit-expense-receipt-id" className="mb-2 block text-sm font-semibold text-slate-700">Receipt ID</label>
-                                            <input
-                                                id="edit-expense-receipt-id"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                type="text"
-                                                value={selectedTransaction.receipt_id || ''}
-                                                onChange={(e) =>
-                                                    setSelectedTransaction({
-                                                        ...selectedTransaction,
-                                                        receipt_id: e.target.value
-                                                    })
-                                                }
-                                                required={selectedTransaction.expenditure_type === 'supplies'}
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                <div>
-                                    <label htmlFor="edit-expense-date" className="mb-2 block text-sm font-semibold text-slate-700">Date</label>
-                                    <input
-                                        id="edit-expense-date"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        type="date"
-                                        value={formatDate(selectedTransaction.transaction_date)}
-                                        onChange={(e) =>
-                                            setSelectedTransaction({
-                                                ...selectedTransaction,
-                                                transaction_date: e.target.value
-                                            })
-                                        }
-                                        required
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end md:col-span-2">
-                                    <button type="submit" className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-                                        Save Changes
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                                        onClick={() => setSelectedTransaction(null)}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                </div>
-            )}
+            <TransactionEditModal
+                transaction={selectedTransaction}
+                onClose={() => setSelectedTransaction(null)}
+                onSaved={handleTransactionChanged}
+            />
+            <TransactionDeleteModal
+                transaction={transactionToDelete}
+                onClose={() => setTransactionToDelete(null)}
+                onDeleted={handleTransactionChanged}
+            />
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -805,6 +404,13 @@ function AdminTransactions({ onTransactionUpdated }) {
                             >
                                 Edit
                             </button>
+                            <button
+                                type="button"
+                                className="ml-2 inline-flex items-center rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                                onClick={() => setTransactionToDelete(transaction)}
+                            >
+                                Delete
+                            </button>
                         </td>
                         </tr>
                     ))}
@@ -843,7 +449,7 @@ function AdminTransactions({ onTransactionUpdated }) {
     <button
         type="button"
         onClick={() => fetchTransactions(pagination.currentPage + 1)}
-        disabled={pagination.currentPage === pagination.totalPages}
+        disabled={pagination.currentPage >= pagination.totalPages}
         className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
     >
         Next
