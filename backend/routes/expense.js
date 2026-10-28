@@ -18,6 +18,7 @@ router.post(
             destination,
             receipt_id,
             date_of_expense,
+            request_id
         } = req.body;   //gets the expense details by the client
         if (
             !amount ||
@@ -84,9 +85,10 @@ router.post(
                   destination,
                   receipt_id,
                   date_of_expense,
-                  user_id
+                  user_id,
+                  request_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     amount,
                     expenditure_type,
@@ -94,7 +96,8 @@ router.post(
                     destination || null,
                     receipt_id || null,
                     date_of_expense,
-                    req.user.user_id
+                    req.user.user_id,
+                    request_id || null
                 ]
             );
 
@@ -104,6 +107,26 @@ router.post(
             });
         } catch (error) {
             console.error(error);
+
+            if (
+                error.code === "ER_DUP_ENTRY" &&
+                error.errno === 1062 &&
+                request_id
+            ) {
+                const rows = await pool.query(
+                    `SELECT expense_id
+                     FROM expense
+                     WHERE request_id = ? AND user_id = ?`,
+                    [request_id, req.user.user_id]
+                );
+
+                if (rows.length > 0) {
+                    return res.status(200).json({
+                        message: "Expense already recorded",
+                        expense_id: Number(rows[0].expense_id)
+                    });
+                }
+            }
 
             res.status(500).json({
                 message: "Server error"
