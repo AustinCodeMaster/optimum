@@ -18,15 +18,22 @@ router.get(
         //SUM(amount) adds all the amounts together 
         //COALESCE means if there are no records and SUM() is null use 0 instead
         //the pool.query sends the below sql to MariaDB and stores the result in rows
-        const rows = await pool.query(`
-            SELECT
-            (SELECT COALESCE(SUM(amount), 0) FROM received) AS total_received,
-            (SELECT COALESCE(SUM(amount), 0) FROM expense)  AS total_expenses
-            `);
+           const rows = await pool.query(`
+                   SELECT
+                   (
+            SELECT COALESCE(SUM(amount), 0)
+            FROM received
+            WHERE deleted_at IS NULL
+            ) AS total_received,
+             (
+            SELECT COALESCE(SUM(amount), 0)
+            FROM expense
+            WHERE deleted_at IS NULL
+         ) AS total_expenses
+                    `);
 
             const totalReceived = Number(rows[0].total_received);
             const totalExpenses = Number(rows[0].total_expenses);
-
             const currentBalance = totalReceived - totalExpenses;
 
             res.status(200).json({

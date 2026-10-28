@@ -220,15 +220,24 @@ router.patch(
             }
         }
 
-        // UPDATE expense query
-                try {
-            const rows = await pool.query(
+             // Update the expense and save its audit entry together
+        let connection;
+
+        try {
+            connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            // Lock the active expense until this transaction finishes
+            const rows = await connection.query(
                 `SELECT * FROM expense
-                 WHERE expense_id = ? AND deleted_at IS NULL`,
+                 WHERE expense_id = ? AND deleted_at IS NULL
+                 FOR UPDATE`,
                 [expenseId]
             );
 
             if (rows.length === 0) {
+                await connection.rollback();
+
                 return res.status(404).json({
                     message: "Expense not found"
                 });
@@ -236,24 +245,32 @@ router.patch(
 
             const oldExpense = rows[0];
 
-            if (req.user.role === "staff" && oldExpense.user_id !== req.user.user_id) {
+            // Staff can only edit an expense they created
+            if (
+                req.user.role === "staff" &&
+                oldExpense.user_id !== req.user.user_id
+            ) {
+                await connection.rollback();
+
                 return res.status(403).json({
                     message: "You can only edit your own expenses"
                 });
             }
 
-            const result = await pool.query(
+            // Enforce ownership and deletion rules in the UPDATE too
+            await connection.query(
                 `UPDATE expense
-                SET amount = ?,
-                    expenditure_type = ?,
-                    description = ?,
-                    destination = ?,
-                    receipt_id = ?,
-                    date_of_expense = ?,
-                    updated_at = NOW(),
-                    updated_by = ?
-                WHERE expense_id = ? `,
-
+                 SET amount = ?,
+                     expenditure_type = ?,
+                     description = ?,
+                     destination = ?,
+                     receipt_id = ?,
+                     date_of_expense = ?,
+                     updated_at = NOW(),
+                     updated_by = ?
+                 WHERE expense_id = ?
+                   AND deleted_at IS NULL
+                   AND (? = 'admin' OR user_id = ?)`,
                 [
                     amount,
                     expenditure_type,
@@ -262,47 +279,181 @@ router.patch(
                     receipt_id || null,
                     date_of_expense,
                     req.user.user_id,
-                    expenseId
+                    expenseId,
+                    req.user.role,
+                    req.user.user_id
                 ]
             );
-            //check whether the expesnse actually exists
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    message: "Expense not found"
-                });
-            }
-           //record the edit in the audit log
-           await pool.query(
-             `INSERT INTO audit_log
-             (entity, entity_id, action, changed_by, old_values, new_values)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-             [
-                "expense",
-                 expenseId,
-                 "edit",
-                 req.user.user_id,
-                 JSON.stringify(oldExpense),
-                 JSON.stringify({
-                        amount,
-                        expenditure_type,
-                        description,
-                        destination: destination || null,
-                        receipt_id: receipt_id || null,
-                        date_of_expense
-                    })
-             ]
-           );
-           
-            //succesaful correction
-            res.status(200).json({
+
+            // Read the saved values for an accurate audit entry
+            const updatedRows = await connection.query(
+                `SELECT * FROM expense WHERE expense_id = ?`,
+                [expenseId]
+            );
+
+            await connection.query(
+                `INSERT INTO audit_log
+                 (
+                     entity,
+                     entity_id,
+                     action,
+                     changed_by,
+                     old_values,
+                     new_values
+                 )
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                    "expense",
+                    expenseId,
+                    "edit",
+                    req.user.user_id,
+                    JSON.stringify(oldExpense),
+                    JSON.stringify(updatedRows[0])
+                ]
+            );
+
+            // Save both the expense change and audit entry
+            await connection.commit();
+
+            return res.status(200).json({
                 message: "Expense updated successfully"
             });
         } catch (error) {
-            console.error(error);
-            
-            res.status(500).json({
+            // Undo the expense change if any database operation failed
+            if (connection) {
+                try {
+                    await connection.rollback();
+                } catch {
+                    console.error("Expense update rollback failed");
+                }
+            }
+
+            console.error(
+                "Expense update failed",
+                error.code || "UNKNOWN_ERROR"
+            );
+
+            return res.status(500).json({
                 message: "Server error"
             });
+        } finally {
+            // Always return the connection to the pool
+            if (connection) {
+                await connection.release();
+            }
+        }
+    }
+);
+
+// DELETE /api/expense/:id - admin soft deletes an expense
+router.delete(
+    "/:id",
+    authenticateToken,
+    authorizeRole("admin"),
+    async (req, res) => {
+        const expenseId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(expenseId) || expenseId <= 0) {
+            return res.status(400).json({
+                message: "Invalid expense ID"
+            });
+        }
+
+        const reason = req.body?.reason;
+
+        if (
+            typeof reason !== "string" ||
+            reason.trim().length === 0 ||
+            reason.trim().length > 255
+        ) {
+            return res.status(400).json({
+                message: "A reason between 1 and 255 characters is required"
+            });
+        }
+
+        const deleteReason = reason.trim();
+        let connection;
+
+        try {
+            connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            // Lock the active expense during deletion
+            const rows = await connection.query(
+                `SELECT * FROM expense
+                 WHERE expense_id = ? AND deleted_at IS NULL
+                 FOR UPDATE`,
+                [expenseId]
+            );
+
+            if (rows.length === 0) {
+                await connection.rollback();
+
+                return res.status(404).json({
+                    message: "Expense not found or already deleted"
+                });
+            }
+
+            // Mark the expense as deleted without removing it
+            const result = await connection.query(
+                `UPDATE expense
+                 SET deleted_at = NOW(),
+                     deleted_by = ?,
+                     delete_reason = ?
+                 WHERE expense_id = ?
+                   AND deleted_at IS NULL`,
+                [req.user.user_id, deleteReason, expenseId]
+            );
+
+            if (result.affectedRows !== 1) {
+                await connection.rollback();
+
+                return res.status(404).json({
+                    message: "Expense not found or already deleted"
+                });
+            }
+
+            // Save the audit entry in the same transaction
+            await connection.query(
+                `INSERT INTO audit_log
+                 (entity, entity_id, action, changed_by, old_values, reason)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                    "expense",
+                    expenseId,
+                    "delete",
+                    req.user.user_id,
+                    JSON.stringify(rows[0]),
+                    deleteReason
+                ]
+            );
+
+            await connection.commit();
+
+            return res.status(200).json({
+                message: "Expense deleted successfully"
+            });
+        } catch (error) {
+            if (connection) {
+                try {
+                    await connection.rollback();
+                } catch {
+                    console.error("Expense deletion rollback failed");
+                }
+            }
+
+            console.error(
+                "Expense deletion failed",
+                error.code || "UNKNOWN_ERROR"
+            );
+
+            return res.status(500).json({
+                message: "Server error"
+            });
+        } finally {
+            if (connection) {
+                await connection.release();
+            }
         }
     }
 );

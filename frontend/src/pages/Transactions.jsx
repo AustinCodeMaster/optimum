@@ -1,4 +1,5 @@
 import Sidebar from '../components/Sidebar.jsx'
+import TransactionEditModal from '../components/TransactionEditModal.jsx'
 import { useState, useEffect} from 'react'
 
 const apiUrl = import.meta.env.VITE_API_URL
@@ -6,6 +7,15 @@ const apiUrl = import.meta.env.VITE_API_URL
 function Transactions() {
     const [transactions, setTransactions] = useState([])
     const [error, setError] = useState('')
+    const [selectedTransaction, setSelectedTransaction] = useState(null)
+    const [user] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('user'))
+        } catch {
+            return null
+        }
+    })
+    const currentUserId = Number(user?.user_id)
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -44,7 +54,7 @@ function Transactions() {
             params.append('expenditure_type', paymentCategory)
         }
         
-        fetch(`${apiUrl}/api/transactions?${params.toString()}`, {
+        return fetch(`${apiUrl}/api/transactions?${params.toString()}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -200,6 +210,11 @@ function Transactions() {
     </div>
 
 </div>
+                <TransactionEditModal
+                    transaction={selectedTransaction}
+                    onClose={() => setSelectedTransaction(null)}
+                    onSaved={() => fetchTransactions(pagination.currentPage)}
+                />
                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
@@ -234,6 +249,9 @@ function Transactions() {
                             className="px-4 py-3 text-left font-semibold text-slate-700"
                             >
                                 Amount
+                            </th>
+                            <th className="px-4 py-3 text-right font-semibold text-slate-700">
+                                Actions
                             </th>
                         </tr>
                     </thead>
@@ -319,6 +337,19 @@ function Transactions() {
 
                             <td className="px-4 py-4 text-right text-base font-semibold text-slate-900">
                                 Ksh {transaction.amount}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-4 text-right">
+                                {user?.role === 'staff' &&
+                                    currentUserId > 0 &&
+                                    currentUserId === Number(transaction.user_id) && (
+                                        <button
+                                            type="button"
+                                            className="inline-flex items-center rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                                            onClick={() => setSelectedTransaction(transaction)}
+                                        >
+                                            Edit
+                                        </button>
+                                    )}
                             </td>
                                 
                             </tr>

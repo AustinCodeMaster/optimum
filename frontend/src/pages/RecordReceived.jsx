@@ -1,8 +1,7 @@
 import Sidebar from '../components/Sidebar.jsx'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-const apiUrl = import.meta.env.VITE_API_URL
+import useTransactionSave from '../hooks/useTransactionSave.js'
 
 function RecordReceived() {
     const [patientName, setPatientName] = useState('')
@@ -14,60 +13,39 @@ function RecordReceived() {
     const [mpesaTransactionNumber, setMpesaTransactionNumber] = useState('')
     const [dateReceived, setDateReceived] = useState('')
     const [receivedType, setReceivedType] = useState('patient_payment')
+    const { save, isSaving, error, success } = useTransactionSave(
+        '/api/received',
+        'Payment recorded successfully'
+    )
 
     const navigate = useNavigate()
 
     async function handleSubmit(e) {
         e.preventDefault()
+        if (isSaving) return
 
-        const token = localStorage.getItem('token')
+        const saved = await save({
+            patient_name: receivedType === 'patient_payment' ? patientName : null,
+            doctor_name: receivedType === 'patient_payment' ? doctorName : null,
+            lab_number: receivedType === 'patient_payment' ? labNumber : null,
+            amount: Number(amount),
+            payment_method: paymentMethod,
+            receipt_number: paymentMethod === 'cash' ? receiptNumber : null,
+            mpesa_transaction_number: paymentMethod === 'mpesa' ? mpesaTransactionNumber : null,
+            date_received: dateReceived,
+            received_type: receivedType,
+        })
 
-        try {
-            const response = await fetch(`${apiUrl}/api/received`, {
-                method: 'POST',
-
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-
-                body: JSON.stringify({
-                    patient_name:
-                        receivedType === 'patient_payment' ? patientName : null,
-
-                    doctor_name:
-                        receivedType === 'patient_payment' ? doctorName : null,
-
-                    lab_number:
-                        receivedType === 'patient_payment' ? labNumber : null,
-
-                    amount: Number(amount),
-
-                    payment_method: paymentMethod,
-
-                    receipt_number:
-                        paymentMethod === 'cash' ? receiptNumber : null,
-
-                    mpesa_transaction_number:
-                        paymentMethod === 'mpesa'
-                            ? mpesaTransactionNumber
-                            : null,
-
-                    date_received: dateReceived,
-
-                    received_type: receivedType
-                })
-            })
-
-            const data = await response.json()
-
-            if (response.ok) {
-                alert('Payment recorded successfully')
-            } else {
-                alert(data.message || 'Unable to record payment.')
-            }
-        } catch {
-            alert('Unable to contact the server or read its response. Please try again.')
+        if (saved) {
+            setPatientName('')
+            setDoctorName('')
+            setLabNumber('')
+            setAmount('')
+            setPaymentMethod('')
+            setReceiptNumber('')
+            setMpesaTransactionNumber('')
+            setDateReceived('')
+            setReceivedType('patient_payment')
         }
     }
 
@@ -88,8 +66,21 @@ function RecordReceived() {
 
                 <form
                     onSubmit={handleSubmit}
-                    className="grid grid-cols-1 gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2"
+                    aria-busy={isSaving}
+                    className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
                 >
+                    {error && (
+                        <p role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {error}
+                        </p>
+                    )}
+                    {success && (
+                        <p role="status" className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                            {success}
+                        </p>
+                    )}
+                    <fieldset disabled={isSaving} className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        <legend className="sr-only">Received payment details</legend>
                     <div className="md:col-span-2">
                         <label className="mb-2 block text-sm font-semibold text-slate-700">
                             Received Type
@@ -264,19 +255,22 @@ function RecordReceived() {
                     <div className="flex justify-end gap-3 md:col-span-2">
                         <button
                             type="button"
+                            disabled={isSaving}
                             onClick={() => navigate('/staff/dashboard')}
-                            className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                            className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Cancel
                         </button>
 
                         <button
                             type="submit"
-                            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                            disabled={isSaving}
+                            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Save Payment
+                            {isSaving ? 'Saving…' : 'Save Payment'}
                         </button>
                     </div>
+                    </fieldset>
                 </form>
             </main>
         </div>
