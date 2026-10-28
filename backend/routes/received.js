@@ -154,7 +154,7 @@ router.post(   //creates the endpoint for recording a payment
 router.patch(
    "/:id",  // this is the id placeholder
    authenticateToken,
-   authorizeRole("admin"),
+   authorizeRole("admin", "staff"),
 
    //this is the function that express runs whenever someone makes a request to that route
    async (req, res) => {
@@ -236,6 +236,25 @@ router.patch(
         }
       }
       try {
+                const rows = await pool.query(
+            `SELECT * FROM received
+             WHERE received_id = ? AND deleted_at IS NULL`,
+            [receivedId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                message: "Received payment not found"
+            });
+        }
+
+        const oldReceived = rows[0];
+
+        if (req.user.role === "staff" && oldReceived.user_id !== req.user.user_id) {
+            return res.status(403).json({
+                message: "You can only edit your own payments"
+            });
+        }
         const result = await pool.query(
            `UPDATE received
             SET patient_name = ?,
@@ -246,7 +265,9 @@ router.patch(
                 receipt_number = ?,
                 mpesa_transaction_number = ?,
                 date_received = ?,
-                received_type = ?
+                received_type = ?,
+                updated_at = NOW(),
+                updated_by = ?
             WHERE received_id = ?`,
             [
                 received_type === "patient_payment" ? patient_name : null,
@@ -258,6 +279,7 @@ router.patch(
                 mpesa_transaction_number || null,
                 date_received,
                 received_type,
+                req.user.user_id,
                 receivedId
             ] 
         );
@@ -269,7 +291,31 @@ router.patch(
                 message: "Received payment not found"
             });
         }
-
+        
+                //record the edit in the audit log
+        await pool.query(
+            `INSERT INTO audit_log
+             (entity, entity_id, action, changed_by, old_values, new_values)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+                "received",
+                receivedId,
+                "edit",
+                req.user.user_id,
+                JSON.stringify(oldReceived),
+                JSON.stringify({
+                    patient_name: received_type === "patient_payment" ? patient_name : null,
+                    doctor_name: received_type === "patient_payment" ? doctor_name : null,
+                    lab_number: received_type === "patient_payment" ? lab_number : null,
+                    amount,
+                    payment_method,
+                    receipt_number: receipt_number || null,
+                    mpesa_transaction_number: mpesa_transaction_number || null,
+                    date_received,
+                    received_type
+                })
+            ]
+        );
         //send success response
         res.status(200).json({
             message: "Payment updated successfully"
