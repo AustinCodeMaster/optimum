@@ -34,25 +34,26 @@ function SummaryCards({ refreshKey }) {
     }, [refreshKey])
 
     return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+    // Keep cards wider on tablets and allow for the desktop sidebar before using three columns.
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {error && (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 md:col-span-3">
+            <p role="alert" className="col-span-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
             </p>
         )}
 
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
                     ↓
                 </div>
 
-                <div>
+                <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-500">
                         Total Received
                     </p>
 
-                    <h2 className="mt-1 text-3xl font-bold text-emerald-700">
+                    <h2 className="mt-1 break-words text-2xl font-bold text-emerald-700 sm:text-3xl">
                         Ksh {summary.total_received}
                     </h2>
 
@@ -65,16 +66,16 @@ function SummaryCards({ refreshKey }) {
 
         <div className="rounded-2xl border border-red-100 bg-red-50/60 p-6 shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-2xl text-red-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-2xl text-red-700">
                     ↑
                 </div>
 
-                <div>
+                <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-500">
                         Total Expenses
                     </p>
 
-                    <h2 className="mt-1 text-3xl font-bold text-red-700">
+                    <h2 className="mt-1 break-words text-2xl font-bold text-red-700 sm:text-3xl">
                         Ksh {summary.total_expenses}
                     </h2>
 
@@ -87,16 +88,16 @@ function SummaryCards({ refreshKey }) {
 
         <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-2xl text-blue-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-2xl text-blue-700">
                     ₵
                 </div>
 
-                <div>
+                <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-500">
                         Current Balance
                     </p>
 
-                    <h2 className="mt-1 text-3xl font-bold text-blue-700">
+                    <h2 className="mt-1 break-words text-2xl font-bold text-blue-700 sm:text-3xl">
                         Ksh {summary.current_balance}
                     </h2>
 

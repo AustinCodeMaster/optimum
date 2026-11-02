@@ -50,10 +50,10 @@ function RecordReceived() {
     }
 
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex min-h-screen flex-col bg-slate-50 lg:flex-row">
             <Sidebar />
 
-            <main className="min-w-0 flex-1 p-6 lg:p-8">
+            <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-slate-900">
                         Record Received Payment
@@ -67,7 +67,7 @@ function RecordReceived() {
                 <form
                     onSubmit={handleSubmit}
                     aria-busy={isSaving}
-                    className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
                 >
                     {error && (
                         <p role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -79,7 +79,8 @@ function RecordReceived() {
                             {success}
                         </p>
                     )}
-                    <fieldset disabled={isSaving} className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {/* Keep one column on phones and use two when there is more room. */}
+                    <fieldset disabled={isSaving} className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
                         <legend className="sr-only">Received payment details</legend>
                     <div className="md:col-span-2">
                         <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -248,11 +249,12 @@ function RecordReceived() {
                                 setDateReceived(e.target.value)
                             }
                             required
-                            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            className="min-w-0 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
                     </div>
 
-                    <div className="flex justify-end gap-3 md:col-span-2">
+                    {/* Stack the actions on phones and align them right on wider screens. */}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-end md:col-span-2">
                         <button
                             type="button"
                             disabled={isSaving}
