@@ -239,8 +239,8 @@ function AdminTransactions({ onTransactionUpdated }) {
 
             {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
 
-            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 
     <input
         type="text"
@@ -275,20 +275,23 @@ function AdminTransactions({ onTransactionUpdated }) {
 
     <input
         type="date"
-        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        aria-label="Start date"
+        className="min-w-0 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
     />
 
     <input
         type="date"
-        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        aria-label="End date"
+        className="min-w-0 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         value={endDate}
         onChange={(e) => setEndDate(e.target.value)}
     />
 
                 </div>
-                <div className="mt-4 flex flex-wrap justify-end gap-3">
+                {/* Stack filter actions on phones and place them in a row on wider screens. */}
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
     <button
         type="button"
         className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -324,7 +327,41 @@ function AdminTransactions({ onTransactionUpdated }) {
                 onClose={() => setTransactionToDelete(null)}
                 onDeleted={handleTransactionChanged}
             />
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {/* Cards keep all transaction details and both actions visible on phones. */}
+            <ul className="space-y-3 md:hidden">
+                {transactions.map(transaction => (
+                    <li key={`${transaction.type}-${transaction.transaction_id}`} className="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <time className="text-slate-600">{new Date(transaction.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</time>
+                            <span className={transaction.type === 'received'
+                                ? 'rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700'
+                                : 'rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700'}>{transaction.type}</span>
+                        </div>
+                        <div className="mt-3 break-words">
+                            {transaction.type === 'received' ? (
+                                transaction.received_type === 'owner_funding' ? (
+                                    <><p className="font-medium text-slate-800">Owner Funding</p><p className="text-xs text-slate-500">Capital added by owner</p></>
+                                ) : (
+                                    <><p className="font-medium text-slate-800">{transaction.patient_name}</p><p className="text-xs text-slate-500">Lab No: {transaction.lab_number}</p></>
+                                )
+                            ) : (
+                                <><p className="font-medium text-slate-800">{transaction.description}</p>{transaction.destination && <p className="text-xs text-slate-500">{transaction.destination}</p>}</>
+                            )}
+                        </div>
+                        <dl className="mt-3 space-y-1 break-words text-slate-600">
+                            <div><dt className="inline font-medium">Reference: </dt><dd className="inline">{transaction.receipt_number || transaction.mpesa_transaction_number || transaction.receipt_id || '-'}</dd></div>
+                            <div><dt className="inline font-medium">Payment / Category: </dt><dd className="inline">{transaction.type === 'received' ? transaction.payment_method : transaction.expenditure_type}</dd></div>
+                        </dl>
+                        <p className="mt-3 break-words text-base font-semibold text-slate-900">Ksh {transaction.amount}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setSelectedTransaction(transaction)} className="rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100">Edit</button>
+                            <button type="button" onClick={() => setTransactionToDelete(transaction)} className="rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">Delete</button>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+            {/* The table remains available on tablets and larger screens. */}
+            <div className="hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
                 <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
                 <thead className="bg-slate-50">
@@ -418,33 +455,27 @@ function AdminTransactions({ onTransactionUpdated }) {
             </table>
                 </div>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 p-4">
+            <nav aria-label="Transaction pages" className="flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 p-4">
 
     <button
         type="button"
         onClick={() => fetchTransactions(pagination.currentPage - 1)}
-        disabled={pagination.currentPage === 1}
+        disabled={pagination.currentPage <= 1}
         className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
     >
         Previous
     </button>
 
-    {Array.from({ length: pagination.totalPages }, (_, index) => {
-        const pageNumber = index + 1
-
-        return (
-            <button
-                type="button"
-                key={pageNumber}
-                onClick={() => fetchTransactions(pageNumber)}
-                className={pagination.currentPage === pageNumber
-                    ? 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white'
-                    : 'rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
-            >
-                {pageNumber}
-            </button>
-        )
-    })}
+    {/* A selector keeps pagination compact and allows a direct jump to any page. */}
+    <label className="flex items-center gap-2 text-sm text-slate-700">
+        Page
+        <select aria-label="Go to page" value={pagination.currentPage} onChange={event => fetchTransactions(Number(event.target.value))} className="rounded-lg border border-slate-300 bg-white px-2 py-2">
+            {Array.from({ length: Math.max(1, pagination.totalPages) }, (_, index) => (
+                <option key={index + 1} value={index + 1}>{index + 1}</option>
+            ))}
+        </select>
+        of {Math.max(1, pagination.totalPages)}
+    </label>
 
     <button
         type="button"
@@ -455,7 +486,7 @@ function AdminTransactions({ onTransactionUpdated }) {
         Next
     </button>
 
-</div>
+</nav>
         </div>
     )
 }
